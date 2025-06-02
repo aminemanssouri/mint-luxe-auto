@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
+import Image from "next/image"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/components/language-provider"
@@ -41,9 +42,15 @@ export default function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="relative h-10 w-32"
+            className="relative h-16 w-64"
           >
-            <span className="text-xl font-bold text-gold">LUXURY CARS</span>
+            <Image 
+              src="/Gemini_Generated_Image_1vhj7r1vhj7r1vhj-removebg-preview.png" 
+              alt="Luxury Cars Logo" 
+              fill 
+              className="object-contain" 
+              priority
+            />
           </motion.div>
         </Link>
 

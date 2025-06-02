@@ -99,7 +99,7 @@ export default function FeaturedCars() {
                 </div>
                 <p className="mb-6 text-sm text-white/60">{car.specs}</p>
                 <div className={`flex ${isRTL ? "justify-start space-x-reverse space-x-4" : "justify-between"}`}>
-                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                  <Button variant="outline" className="border-white/20 text-black hover:bg-gold/20">
                     {t.common.details}
                   </Button>
                   <Button className="bg-gold hover:bg-gold/90 text-black">{t.common.reserve}</Button>

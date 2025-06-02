@@ -2,25 +2,26 @@
 
 import { motion } from "framer-motion"
 import { useLanguage } from "@/components/language-provider"
+import Image from "next/image"
 
 // Trusted by brands data
 const trustedBrands = [
-  { name: "Bugatti", icon: "🏎️" },
-  { name: "Ferrari", icon: "🐎" },
-  { name: "Lamborghini", icon: "🐂" },
-  { name: "McLaren", icon: "🧡" },
-  { name: "Porsche", icon: "🏁" },
-  { name: "Rolls-Royce", icon: "👑" },
-  { name: "Bentley", icon: "🦅" },
-  { name: "Aston Martin", icon: "🗡️" },
-  { name: "Mercedes-AMG", icon: "⭐" },
-  { name: "BMW M", icon: "🔷" },
-  { name: "Audi Sport", icon: "💎" },
-  { name: "Maserati", icon: "🔱" },
-  { name: "Koenigsegg", icon: "⚡" },
-  { name: "Pagani", icon: "🌪️" },
-  { name: "Brabus", icon: "🚗" },
-  { name: "Mansory", icon: "✨" },
+  { name: "Bugatti",     image: "https://logo.clearbit.com/bugatti.com" },
+  { name: "Ferrari",     image: "https://logo.clearbit.com/ferrari.com" },
+  { name: "Lamborghini", image: "https://logo.clearbit.com/lamborghini.com" },
+  { name: "McLaren",     image: "https://logo.clearbit.com/mclaren.com" },
+  { name: "Porsche",     image: "https://logo.clearbit.com/porsche.com" },
+  { name: "Rolls-Royce", image: "https://logo.clearbit.com/rolls-royce.com" },
+  { name: "Bentley",     image: "https://logo.clearbit.com/bentleymotors.com" },
+  { name: "Aston Martin",image: "https://logo.clearbit.com/astonmartin.com" },
+  { name: "Mercedes-AMG",image: "https://logo.clearbit.com/mercedes-benz.com" },
+  { name: "BMW M",       image: "https://logo.clearbit.com/bmw.com" },
+  { name: "Audi Sport",  image: "https://logo.clearbit.com/audi.com" },
+  { name: "Maserati",    image: "https://logo.clearbit.com/maserati.com" },
+  { name: "Koenigsegg",  image: "https://logo.clearbit.com/koenigsegg.com" },
+  { name: "Pagani",      image: "https://logo.clearbit.com/pagani.com" },
+  { name: "Brabus",      image: "https://logo.clearbit.com/brabus.com" },
+  { name: "Mansory",     image: "https://logo.clearbit.com/mansory.com" }
 ]
 
 export default function TrustedBySection() {
@@ -72,7 +73,15 @@ export default function TrustedBySection() {
                   className="flex-shrink-0 flex items-center space-x-4 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg px-6 py-4 min-w-[200px] group hover:border-gold/30 transition-all duration-300"
                   whileHover={{ scale: 1.05, y: -2 }}
                 >
-                  <div className="text-3xl">{brand.icon}</div>
+                  <div className="w-10 h-10 relative flex-shrink-0">
+                    <Image 
+                      src={brand.image} 
+                      alt={`${brand.name} logo`} 
+                      fill 
+                      className="object-contain" 
+                      sizes="40px"
+                    />
+                  </div>
                   <div>
                     <h3 className="text-white font-medium group-hover:text-gold transition-colors">{brand.name}</h3>
                     <p className="text-white/60 text-sm">Premium Partner</p>
@@ -104,7 +113,15 @@ export default function TrustedBySection() {
                     className="flex-shrink-0 flex items-center space-x-4 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg px-6 py-4 min-w-[200px] group hover:border-gold/30 transition-all duration-300"
                     whileHover={{ scale: 1.05, y: -2 }}
                   >
-                    <div className="text-3xl">{brand.icon}</div>
+                    <div className="w-10 h-10 relative flex-shrink-0">
+                    <Image 
+                      src={brand.image} 
+                      alt={`${brand.name} logo`} 
+                      fill 
+                      className="object-contain" 
+                      sizes="40px"
+                    />
+                  </div>
                     <div>
                       <h3 className="text-white font-medium group-hover:text-gold transition-colors">{brand.name}</h3>
                       <p className="text-white/60 text-sm">Luxury Partner</p>

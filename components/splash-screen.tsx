@@ -22,7 +22,7 @@ export default function SplashScreen() {
         className="relative h-32 w-64"
       >
         <Image
-          src="/placeholder.svg?height=128&width=256"
+          src="/Gemini_Generated_Image_1vhj7r1vhj7r1vhj.png"
           alt="Luxury Cars Logo"
           fill
           className="object-contain"

@@ -150,158 +150,13 @@ export default function HeroSection() {
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-black/50 z-10" />
         <video ref={videoRef} autoPlay muted loop playsInline className="h-full w-full object-cover">
-          <source src="/placeholder-video.mp4" type="video/mp4" />
+          <source src="/Ultimate Supercar Showroom in Dubai - Dourado Luxury Cars!.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       </div>
 
       {/* Rotating Brand Carousel */}
-      <div className="absolute inset-0 z-15 pointer-events-none">
-        <div className="relative h-full w-full flex items-center justify-center">
-          {/* Large Circle */}
-          <div className="relative w-[800px] h-[800px] md:w-[1000px] md:h-[1000px]">
-            {luxuryBrands.map((brand, index) => {
-              const angle = (index * 360) / luxuryBrands.length
-              const radius = 350 // Distance from center
-
-              return (
-                <motion.div
-                  key={brand.name}
-                  className="absolute w-20 h-20 md:w-24 md:h-24"
-                  style={{
-                    left: "50%",
-                    top: "50%",
-                    transformOrigin: "50% 50%",
-                  }}
-                  animate={{
-                    rotate: 360,
-                    x: Math.cos((angle * Math.PI) / 180) * radius - 40,
-                    y: Math.sin((angle * Math.PI) / 180) * radius - 40,
-                  }}
-                  transition={{
-                    duration: 60, // 60 seconds for full rotation
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "linear",
-                  }}
-                >
-                  <motion.div
-                    className="w-full h-full rounded-full bg-black/20 backdrop-blur-sm border border-gold/30 flex items-center justify-center group hover:bg-gold/20 transition-all duration-300"
-                    whileHover={{ scale: 1.1 }}
-                    animate={{
-                      rotate: -360, // Counter-rotate to keep content upright
-                    }}
-                    transition={{
-                      duration: 60,
-                      repeat: Number.POSITIVE_INFINITY,
-                      ease: "linear",
-                    }}
-                  >
-                    <div className="text-center">
-                      <div className="text-2xl md:text-3xl mb-1">{brand.icon}</div>
-                      <div className="text-xs font-medium text-white/80 group-hover:text-gold transition-colors">
-                        {brand.name.split(" ")[0]}
-                      </div>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              )
-            })}
-          </div>
-
-          {/* Medium Circle */}
-          <div className="absolute w-[500px] h-[500px] md:w-[600px] md:h-[600px]">
-            {luxuryBrands.slice(0, 8).map((brand, index) => {
-              const angle = (index * 360) / 8
-              const radius = 200
-
-              return (
-                <motion.div
-                  key={`medium-${brand.name}`}
-                  className="absolute w-16 h-16 md:w-20 md:h-20"
-                  style={{
-                    left: "50%",
-                    top: "50%",
-                    transformOrigin: "50% 50%",
-                  }}
-                  animate={{
-                    rotate: -360, // Opposite direction
-                    x: Math.cos((angle * Math.PI) / 180) * radius - 32,
-                    y: Math.sin((angle * Math.PI) / 180) * radius - 32,
-                  }}
-                  transition={{
-                    duration: 45, // Faster rotation
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "linear",
-                  }}
-                >
-                  <motion.div
-                    className="w-full h-full rounded-full bg-black/15 backdrop-blur-sm border border-white/20 flex items-center justify-center group hover:bg-gold/15 transition-all duration-300"
-                    whileHover={{ scale: 1.1 }}
-                    animate={{
-                      rotate: 360, // Counter-rotate
-                    }}
-                    transition={{
-                      duration: 45,
-                      repeat: Number.POSITIVE_INFINITY,
-                      ease: "linear",
-                    }}
-                  >
-                    <div className="text-center">
-                      <div className="text-lg md:text-xl">{brand.icon}</div>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              )
-            })}
-          </div>
-
-          {/* Small Inner Circle */}
-          <div className="absolute w-[300px] h-[300px]">
-            {luxuryBrands.slice(0, 6).map((brand, index) => {
-              const angle = (index * 360) / 6
-              const radius = 100
-
-              return (
-                <motion.div
-                  key={`small-${brand.name}`}
-                  className="absolute w-12 h-12 md:w-16 md:h-16"
-                  style={{
-                    left: "50%",
-                    top: "50%",
-                    transformOrigin: "50% 50%",
-                  }}
-                  animate={{
-                    rotate: 360,
-                    x: Math.cos((angle * Math.PI) / 180) * radius - 24,
-                    y: Math.sin((angle * Math.PI) / 180) * radius - 24,
-                  }}
-                  transition={{
-                    duration: 30, // Fastest rotation
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "linear",
-                  }}
-                >
-                  <motion.div
-                    className="w-full h-full rounded-full bg-black/10 backdrop-blur-sm border border-white/10 flex items-center justify-center group hover:bg-gold/10 transition-all duration-300"
-                    whileHover={{ scale: 1.1 }}
-                    animate={{
-                      rotate: -360, // Counter-rotate
-                    }}
-                    transition={{
-                      duration: 30,
-                      repeat: Number.POSITIVE_INFINITY,
-                      ease: "linear",
-                    }}
-                  >
-                    <div className="text-sm md:text-base">{brand.icon}</div>
-                  </motion.div>
-                </motion.div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
+     
       {/* Content */}
       <div className="relative z-20 flex h-full items-center justify-center">
         <div className="container mx-auto px-4 text-center">
@@ -377,7 +232,7 @@ export default function HeroSection() {
                       <SelectTrigger className="bg-white/10 border-white/30 text-white">
                         <SelectValue placeholder="Any Brand" />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-700">
+                      <SelectContent className="bg-zinc-900 text-white border-zinc-700">
                         <SelectItem value="any">Any Brand</SelectItem>
                         {brands[vehicleType].map((brand) => (
                           <SelectItem key={brand} value={brand}>
@@ -392,7 +247,7 @@ export default function HeroSection() {
                       <SelectTrigger className="bg-white/10 border-white/30 text-white">
                         <SelectValue placeholder="Any Price" />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-700">
+                      <SelectContent className="bg-zinc-900 text-white border-zinc-700">
                         <SelectItem value="any">Any Price</SelectItem>
                         {priceRanges.map((range) => (
                           <SelectItem key={range.value} value={range.value}>
@@ -449,7 +304,7 @@ export default function HeroSection() {
                               <SelectTrigger className="bg-white/10 border-white/30 text-white">
                                 <SelectValue placeholder="Any Location" />
                               </SelectTrigger>
-                              <SelectContent className="bg-zinc-900 border-zinc-700">
+                              <SelectContent className="bg-zinc-900 text-white border-zinc-700">
                                 <SelectItem value="any">Any Location</SelectItem>
                                 {locations.map((location) => (
                                   <SelectItem key={location} value={location}>
@@ -470,7 +325,7 @@ export default function HeroSection() {
                               <SelectTrigger className="bg-white/10 border-white/30 text-white">
                                 <SelectValue placeholder="Any Year" />
                               </SelectTrigger>
-                              <SelectContent className="bg-zinc-900 border-zinc-700">
+                              <SelectContent className="bg-zinc-900 text-white border-zinc-700">
                                 <SelectItem value="any">Any Year</SelectItem>
                                 {years.map((year) => (
                                   <SelectItem key={year} value={year.toString()}>
