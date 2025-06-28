@@ -50,10 +50,7 @@ export default function TrustedBySection() {
 
         {/* Moving brands container */}
         <div className="relative">
-          {/* Gradient overlays for smooth fade effect */}
-          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-zinc-900 to-transparent z-10" />
-          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-zinc-900 to-transparent z-10" />
-
+          
           {/* First row - moving right to left */}
           <div className="flex mb-8">
             <motion.div
