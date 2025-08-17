@@ -44,52 +44,35 @@ export default function Navbar() {
             transition={{ duration: 0.5, delay: 0.5 }}
             className="relative h-16 w-64"
           >
-            <Image 
-              src="/Gemini_Generated_Image_1vhj7r1vhj7r1vhj-removebg-preview.png" 
-              alt="Luxury Cars Logo" 
-              fill 
-              className="object-contain" 
+            <Image
+              src="/Gemini_Generated_Image_1vhj7r1vhj7r1vhj-removebg-preview.png"
+              alt="Luxury Cars Logo"
+              fill
+              className="object-contain"
               priority
             />
           </motion.div>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden space-x-8 md:flex items-center">
+        <nav className="hidden md:flex items-center space-x-8">
           {[
             { key: "home", href: "#home" },
             { key: "collection", href: "/collection" },
             { key: "about", href: "#about" },
             { key: "services", href: "#services" },
             { key: "contact", href: "#contact" },
-          ].map((item, i) => (
-            <motion.div
+          ].map((item) => (
+            <Link
               key={item.key}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.6 + i * 0.1 }}
+              href={item.href}
+              className="text-sm font-medium tracking-wider text-white/80 transition-colors hover:text-gold"
             >
-              <Link
-                href={item.href}
-                className="text-sm font-medium tracking-wider text-white/80 transition-colors hover:text-gold"
-              >
-                {t.nav[item.key as keyof typeof t.nav]}
-              </Link>
-            </motion.div>
+              {t.nav[item.key as keyof typeof t.nav]}
+            </Link>
           ))}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 1.0 }}
-          >
-            <LanguageSwitcher />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 1.1 }}
-            className={`flex items-center ${isRTL ? "space-x-reverse space-x-4" : "space-x-4"}`}
-          >
+          <LanguageSwitcher />
+          <div className={`flex items-center ${isRTL ? "space-x-reverse space-x-4" : "space-x-4"}`}>
             <Button
               variant="ghost"
               size="sm"
@@ -105,7 +88,7 @@ export default function Navbar() {
             >
               {t.nav.signup}
             </Button>
-          </motion.div>
+          </div>
         </nav>
 
         {/* Mobile Menu Button */}

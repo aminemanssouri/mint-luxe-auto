@@ -1,67 +1,64 @@
 "use client"
 
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, useInView } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Wrench, Palette, Shield, Truck, Clock, Star, ArrowRight } from "lucide-react"
+import { Wrench, ArrowRight } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
+import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client"
+
+type Service = {
+  id: string
+  name: string
+  description: string | null
+  base_price: string
+  currency?: string
+}
 
 export default function ServicesSection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, amount: 0.1 })
   const { t, isRTL } = useLanguage()
 
-  const services = [
-    {
-      id: 1,
-      icon: Wrench,
-      title: t.services.premiumMaintenance,
-      description: t.services.maintenanceDesc,
-      features: ["Regular service intervals", "Diagnostic checks", "Performance optimization", "Warranty protection"],
-      price: "From $299",
-    },
-    {
-      id: 2,
-      icon: Palette,
-      title: t.services.customPersonalization,
-      description: t.services.personalizationDesc,
-      features: ["Interior customization", "Exterior modifications", "Performance upgrades", "Unique finishes"],
-      price: "From $2,999",
-    },
-    {
-      id: 3,
-      icon: Shield,
-      title: t.services.conciergeProtection,
-      description: t.services.protectionDesc,
-      features: ["Insurance assistance", "Roadside support", "Security monitoring", "Emergency response"],
-      price: "From $199/month",
-    },
-    {
-      id: 4,
-      icon: Truck,
-      title: t.services.whiteGloveDelivery,
-      description: t.services.deliveryDesc,
-      features: ["Door-to-door service", "Secure transport", "Real-time tracking", "Professional handling"],
-      price: "From $499",
-    },
-    {
-      id: 5,
-      icon: Clock,
-      title: t.services.expressService,
-      description: t.services.expressDesc,
-      features: ["Priority scheduling", "Loaner vehicles", "Same-day service", "Mobile technicians"],
-      price: "From $399",
-    },
-    {
-      id: 6,
-      icon: Star,
-      title: t.services.vipMembership,
-      description: t.services.vipDesc,
-      features: ["Unlimited consultations", "Exclusive events", "Priority booking", "Special discounts"],
-      price: "$999/year",
-    },
-  ]
+  const [services, setServices] = useState<Service[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [user, setUser] = useState<any>(null)
+  const [authChecked, setAuthChecked] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    // auth state
+    const supabase = createSupabaseBrowserClient()
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return
+      setUser(data.user || null)
+      setAuthChecked(true)
+    })
+
+    async function load() {
+      try {
+        setLoading(true)
+        const res = await fetch("/api/services")
+        const json = await res.json()
+        if (!active) return
+        if (json?.ok && Array.isArray(json.items)) {
+          setServices(json.items)
+        } else {
+          setError(json?.error || "Failed to load services")
+        }
+      } catch (e: any) {
+        if (active) setError(e?.message || "Failed to load services")
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      active = false
+    }
+  }, [])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -104,30 +101,29 @@ export default function ServicesSection() {
           animate={isInView ? "show" : "hidden"}
           className="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
         >
-          {services.map((service) => {
-            const IconComponent = service.icon
-            return (
-              <motion.div key={service.id} variants={itemVariants}>
-                <Card className="group h-full bg-zinc-800/50 border-zinc-700 transition-all duration-300 hover:bg-zinc-800 hover:border-gold/50">
-                  <CardHeader>
-                    <div className={`mb-4 flex items-center ${isRTL ? "justify-start" : "justify-between"}`}>
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gold/10">
-                        <IconComponent className="h-6 w-6 text-gold" />
-                      </div>
-                      <span className={`text-lg font-bold text-gold ${isRTL ? "mr-auto" : ""}`}>{service.price}</span>
+          {loading && (
+            <div className="col-span-full text-center text-white/70">Loading services...</div>
+          )}
+          {error && !loading && (
+            <div className="col-span-full text-center text-red-400">{error}</div>
+          )}
+          {!loading && !error && services.map((service) => (
+            <motion.div key={service.id} variants={itemVariants}>
+              <Card className="group h-full bg-zinc-800/50 border-zinc-700 transition-all duration-300 hover:bg-zinc-800 hover:border-gold/50">
+                <CardHeader>
+                  <div className={`mb-4 flex items-center ${isRTL ? "justify-start" : "justify-between"}`}>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gold/10">
+                      <Wrench className="h-6 w-6 text-gold" />
                     </div>
-                    <CardTitle className="text-xl text-white">{service.title}</CardTitle>
-                    <CardDescription className="text-white/70">{service.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="mb-6 space-y-2">
-                      {service.features.map((feature, index) => (
-                        <li key={index} className="flex items-center text-sm text-white/80">
-                          <div className={`h-1.5 w-1.5 rounded-full bg-gold ${isRTL ? "ml-2" : "mr-2"}`} />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
+                    <span className={`text-lg font-bold text-gold ${isRTL ? "mr-auto" : ""}`}>
+                      {service.currency || 'USD'} {service.base_price}
+                    </span>
+                  </div>
+                  <CardTitle className="text-xl text-white">{service.name}</CardTitle>
+                  <CardDescription className="text-white/70">{service.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {authChecked && user ? (
                     <Button
                       className="w-full bg-transparent border border-gold text-gold hover:bg-gold hover:text-black transition-all duration-300 group-hover:bg-gold group-hover:text-black"
                       onClick={() => (window.location.href = "/services/booking")}
@@ -135,11 +131,27 @@ export default function ServicesSection() {
                       {t.services.bookService}
                       <ArrowRight className={`h-4 w-4 ${isRTL ? "mr-2 rotate-180" : "ml-2"}`} />
                     </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )
-          })}
+                  ) : (
+                    <div className={`flex ${isRTL ? 'flex-row-reverse' : ''} gap-2`}>
+                      <Button
+                        className="flex-1 bg-transparent border border-gold text-gold hover:bg-gold hover:text-black"
+                        onClick={() => (window.location.href = "/auth/login?redirect=/services/booking")}
+                      >
+                        Login
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1 border-zinc-700 text-white hover:bg-zinc-800"
+                        onClick={() => (window.location.href = "/auth/signup?redirect=/services/booking")}
+                      >
+                        Sign up
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </motion.div>
 
         <motion.div

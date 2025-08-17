@@ -9,64 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useLanguage } from "@/components/language-provider"
+import { brands, locations, priceRanges, years } from "@/lib/constants"
 
-const brands = {
-  car: [
-    "Rolls-Royce",
-    "Bentley",
-    "Lamborghini",
-    "Bugatti",
-    "Aston Martin",
-    "Ferrari",
-    "McLaren",
-    "Porsche",
-    "Mercedes-AMG",
-    "BMW M",
-  ],
-  motorcycle: ["Ducati", "Kawasaki", "BMW", "MV Agusta", "Aprilia", "KTM", "Harley-Davidson", "Indian"],
-  boat: ["Azimut", "Riva", "Pershing", "Ferretti", "Sunseeker", "Princess", "Benetti", "Lurssen"],
-}
 
-const locations = [
-  "Beverly Hills, CA",
-  "Monaco",
-  "London, UK",
-  "Dubai, UAE",
-  "Miami, FL",
-  "Geneva, Switzerland",
-  "Tokyo, Japan",
-  "Paris, France",
-  "New York, NY",
-  "Singapore",
-  "Hong Kong",
-  "Sydney, Australia",
-]
-
-const priceRanges = [
-  { label: "Under $100K", value: "0-100000" },
-  { label: "$100K - $500K", value: "100000-500000" },
-  { label: "$500K - $1M", value: "500000-1000000" },
-  { label: "$1M - $5M", value: "1000000-5000000" },
-  { label: "Over $5M", value: "5000000-999999999" },
-]
-
-const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i)
-
-// Luxury brand data for the rotating carousel
-const luxuryBrands = [
-  { name: "Bugatti", icon: "🏎️" },
-  { name: "Brabus", icon: "🚗" },
-  { name: "Mansory", icon: "✨" },
-  { name: "Porsche", icon: "🏁" },
-  { name: "Audi", icon: "🔷" },
-  { name: "Ferrari", icon: "🐎" },
-  { name: "Lamborghini", icon: "🐂" },
-  { name: "McLaren", icon: "🧡" },
-  { name: "Rolls-Royce", icon: "👑" },
-  { name: "Bentley", icon: "🦅" },
-  { name: "Aston Martin", icon: "🗡️" },
-  { name: "Mercedes-AMG", icon: "⭐" },
-]
 
 export default function HeroSection() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -80,10 +25,20 @@ export default function HeroSection() {
   const [selectedPriceRange, setSelectedPriceRange] = useState("")
   const [selectedYear, setSelectedYear] = useState("")
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [showVideo, setShowVideo] = useState(false)
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = 0.7
+    const start = () => {
+      setShowVideo(true)
+      if (videoRef.current) {
+        videoRef.current.playbackRate = 0.7
+      }
+    }
+    // Defer mounting the background video until idle or after a short delay
+    if (typeof window !== "undefined" && (window as any).requestIdleCallback) {
+      ;(window as any).requestIdleCallback(start, { timeout: 1500 })
+    } else {
+      setTimeout(start, 1000)
     }
   }, [])
 
@@ -149,10 +104,21 @@ export default function HeroSection() {
       {/* Video Background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-black/50 z-10" />
-        <video ref={videoRef} autoPlay muted loop playsInline className="h-full w-full object-cover">
-          <source src="/Ultimate Supercar Showroom in Dubai - Dourado Luxury Cars!.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+        {showVideo && (
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="none"
+            className="h-full w-full object-cover"
+            poster="/placeholder.jpg"
+          >
+            <source src="/Ultimate Supercar Showroom in Dubai - Dourado Luxury Cars!.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        )}
       </div>
 
       {/* Rotating Brand Carousel */}
@@ -163,7 +129,7 @@ export default function HeroSection() {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
             className="mx-auto max-w-4xl"
           >
             <h1 className="mb-6 text-4xl font-bold tracking-tight text-white md:text-6xl lg:text-7xl">
@@ -180,7 +146,7 @@ export default function HeroSection() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
               className="mx-auto max-w-4xl"
             >
               <Card className="bg-black/30 backdrop-blur-md border-white/20">

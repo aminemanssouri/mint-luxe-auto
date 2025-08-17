@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -26,38 +26,47 @@ import {
 } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
 import LanguageSwitcher from "@/components/language-switcher"
+import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client"
 
-const timeSlots = [
-  "09:00 AM",
-  "09:30 AM",
-  "10:00 AM",
-  "10:30 AM",
-  "11:00 AM",
-  "11:30 AM",
-  "12:00 PM",
-  "12:30 PM",
-  "01:00 PM",
-  "01:30 PM",
-  "02:00 PM",
-  "02:30 PM",
-  "03:00 PM",
-  "03:30 PM",
-  "04:00 PM",
-  "04:30 PM",
-]
+type ServiceItem = {
+  id: string
+  name: string
+  description: string | null
+  base_price: string
+  currency?: string
+}
 
-const locations = [
-  { id: "home", name: "At Your Location", icon: MapPin, price: "+$50" },
-  { id: "workshop", name: "Our Premium Workshop", icon: Settings, price: "Free" },
-  { id: "pickup", name: "Pickup & Delivery", icon: Truck, price: "+$100" },
-]
+type LocationItem = {
+  id: string
+  name: string
+  location_type?: string | null
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  zip_code?: string | null
+  country?: string | null
+  additional_cost: string
+  currency?: string
+}
+
+type TimeSlot = {
+  id: string
+  start_time: string
+  end_time: string
+  day_of_week: number | null
+  specific_date: string | null
+  is_available: boolean
+  max_booking: number | null
+}
 
 export default function BookingPage() {
   const [currentStep, setCurrentStep] = useState(1)
-  const [selectedService, setSelectedService] = useState("")
+  const [authChecked, setAuthChecked] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [selectedService, setSelectedService] = useState<string>("")
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState("")
-  const [selectedLocation, setSelectedLocation] = useState("")
+  const [selectedLocation, setSelectedLocation] = useState<string>("")
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -71,45 +80,88 @@ export default function BookingPage() {
     newsletter: false,
   })
   const { t, isRTL } = useLanguage()
+  const [services, setServices] = useState<ServiceItem[]>([])
+  const [locations, setLocations] = useState<LocationItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
+  const [slotsLoading, setSlotsLoading] = useState(false)
+  const [slotsError, setSlotsError] = useState<string | null>(null)
+  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>("")
 
-  const services = [
-    {
-      id: "maintenance",
-      name: t.services.premiumMaintenance,
-      price: "From $299",
-      duration: "2-4 hours",
-      description: t.services.maintenanceDesc,
-      icon: Settings,
-      features: ["Engine Diagnostics", "Oil Change", "Brake Inspection", "Tire Check"],
-    },
-    {
-      id: "customization",
-      name: t.services.customPersonalization,
-      price: "From $2,999",
-      duration: "1-2 weeks",
-      description: t.services.personalizationDesc,
-      icon: Star,
-      features: ["Interior Customization", "Paint Protection", "Performance Upgrades", "Luxury Accessories"],
-    },
-    {
-      id: "protection",
-      name: t.services.conciergeProtection,
-      price: "From $199/month",
-      duration: "Ongoing",
-      description: t.services.protectionDesc,
-      icon: Shield,
-      features: ["24/7 Monitoring", "Insurance Coverage", "Emergency Response", "Regular Inspections"],
-    },
-    {
-      id: "delivery",
-      name: t.services.whiteGloveDelivery,
-      price: "From $499",
-      duration: "Same day",
-      description: t.services.deliveryDesc,
-      icon: Truck,
-      features: ["White Glove Service", "Professional Driver", "Real-time Tracking", "Premium Insurance"],
-    },
-  ]
+  useEffect(() => {
+    // Check auth on mount
+    const supabase = createSupabaseBrowserClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user || null)
+      setAuthChecked(true)
+    })
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    async function load() {
+      try {
+        setLoading(true)
+        const [srvRes, locRes] = await Promise.all([
+          fetch("/api/services"),
+          fetch("/api/service-locations"),
+        ])
+        const [srvJson, locJson] = await Promise.all([srvRes.json(), locRes.json()])
+        if (!active) return
+        if (srvJson?.ok) setServices(srvJson.items || [])
+        else setError(srvJson?.error || "Failed to load services")
+        if (locJson?.ok) setLocations(locJson.items || [])
+        else setError((e) => e || locJson?.error || "Failed to load locations")
+      } catch (e: any) {
+        if (active) setError(e?.message || "Failed to load data")
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // Load time slots whenever date changes (or initially)
+  useEffect(() => {
+    let active = true
+    async function loadSlots() {
+      try {
+        setSlotsLoading(true)
+        setSlotsError(null)
+        const url = selectedDate ? `/api/time-slots?date=${encodeURIComponent(selectedDate)}` : "/api/time-slots"
+        const res = await fetch(url)
+        const json = await res.json()
+        if (!active) return
+        if (json?.ok) {
+          const items = json.items || []
+          // Fallback: if no slots for the chosen date, show default available slots
+          if (selectedDate && items.length === 0) {
+            const fallbackRes = await fetch("/api/time-slots")
+            const fallbackJson = await fallbackRes.json()
+            if (!active) return
+            if (fallbackJson?.ok) setTimeSlots(fallbackJson.items || [])
+            else setSlotsError(fallbackJson?.error || "Failed to load time slots")
+          } else {
+            setTimeSlots(items)
+          }
+        } else {
+          setSlotsError(json?.error || "Failed to load time slots")
+        }
+      } catch (e: any) {
+        if (active) setSlotsError(e?.message || "Failed to load time slots")
+      } finally {
+        if (active) setSlotsLoading(false)
+      }
+    }
+    loadSlots()
+    return () => {
+      active = false
+    }
+  }, [selectedDate])
 
   const steps = [
     { id: 1, title: "Select Service", description: "Choose your preferred service" },
@@ -138,16 +190,34 @@ export default function BookingPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const getSelectedService = useMemo(() => services.find((s) => s.id === selectedService), [services, selectedService])
+  const getSelectedLocation = useMemo(() => locations.find((l) => l.id === selectedLocation), [locations, selectedLocation])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Booking submitted:", {
-      service: selectedService,
-      date: selectedDate,
-      time: selectedTime,
-      location: selectedLocation,
-      ...formData,
-    })
-    alert("Booking submitted successfully!")
+    try {
+      const body = {
+        service_id: selectedService || null,
+        vehicle_id: null,
+        service_location_id: selectedLocation || null,
+        preferred_date: selectedDate || null,
+        time_slot_id: selectedTimeSlotId || null,
+        base_price: getSelectedService?.base_price ?? 0,
+        location_fee: getSelectedLocation?.additional_cost ?? 0,
+        service_address: formData.address || null,
+        special_request: formData.specialRequests || null,
+      }
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      const json = await res.json()
+      if (!json?.ok) throw new Error(json?.error || "Failed to create booking")
+      alert("Booking submitted successfully!")
+    } catch (err: any) {
+      alert(err?.message || "Failed to submit booking")
+    }
   }
 
   const isStepValid = () => {
@@ -155,7 +225,7 @@ export default function BookingPage() {
       case 1:
         return selectedService !== ""
       case 2:
-        return selectedDate !== "" && selectedTime !== "" && selectedLocation !== ""
+        return selectedDate !== "" && selectedTimeSlotId !== "" && selectedLocation !== ""
       case 3:
         return formData.firstName && formData.lastName && formData.email && formData.phone && formData.carModel
       case 4:
@@ -164,9 +234,6 @@ export default function BookingPage() {
         return false
     }
   }
-
-  const getSelectedService = () => services.find((s) => s.id === selectedService)
-  const getSelectedLocation = () => locations.find((l) => l.id === selectedLocation)
 
   const slideVariants = {
     enter: (direction: number) => ({
@@ -183,6 +250,29 @@ export default function BookingPage() {
       x: direction < 0 ? 300 : -300,
       opacity: 0,
     }),
+  }
+
+  if (authChecked && !user) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+        <Card className="max-w-md w-full bg-zinc-900/60 border-zinc-800">
+          <CardHeader>
+            <CardTitle className="text-white text-2xl">Sign in required</CardTitle>
+            <CardDescription className="text-white/70">Please log in to book a service.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Button className="flex-1 bg-gold hover:bg-gold/90 text-black" onClick={() => (window.location.href = "/auth/login")}>
+                Login
+              </Button>
+              <Button variant="outline" className="flex-1 border-zinc-700 text-white hover:bg-zinc-800" onClick={() => (window.location.href = "/auth/signup")}>
+                Sign up
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -266,52 +356,44 @@ export default function BookingPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-4 sm:gap-6">
-                      {services.map((service) => {
-                        const Icon = service.icon
-                        return (
-                          <div
-                            key={service.id}
-                            className={`p-4 sm:p-6 rounded-lg border cursor-pointer transition-all hover:scale-[1.02] ${
-                              selectedService === service.id
-                                ? "border-gold bg-gold/10 shadow-lg shadow-gold/20"
-                                : "border-zinc-700 bg-zinc-800/30 hover:border-zinc-600"
-                            }`}
-                            onClick={() => setSelectedService(service.id)}
-                          >
-                            <div className="flex items-start justify-between mb-4">
-                              <div className="flex items-center space-x-3">
-                                <div
-                                  className={`p-2 rounded-lg ${selectedService === service.id ? "bg-gold/20" : "bg-zinc-700"}`}
-                                >
-                                  <Icon
-                                    className={`h-5 w-5 ${selectedService === service.id ? "text-gold" : "text-white/70"}`}
-                                  />
-                                </div>
-                                <div>
-                                  <h3 className="font-medium text-white text-sm sm:text-base">{service.name}</h3>
-                                  <div className="flex items-center space-x-2 mt-1">
-                                    <Badge variant="outline" className="text-gold border-gold/30 text-xs">
-                                      {service.price}
-                                    </Badge>
-                                    <span className="text-xs text-white/60">• {service.duration}</span>
+                    {loading ? (
+                      <div className="text-white/70">Loading services...</div>
+                    ) : error ? (
+                      <div className="text-red-400">{error}</div>
+                    ) : (
+                      <div className="grid gap-4 sm:gap-6">
+                        {services.map((service) => {
+                          return (
+                            <div
+                              key={service.id}
+                              className={`p-4 sm:p-6 rounded-lg border cursor-pointer transition-all hover:scale-[1.02] ${
+                                selectedService === service.id
+                                  ? "border-gold bg-gold/10 shadow-lg shadow-gold/20"
+                                  : "border-zinc-700 bg-zinc-800/30 hover:border-zinc-600"
+                              }`}
+                              onClick={() => setSelectedService(service.id)}
+                            >
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className={`p-2 rounded-lg ${selectedService === service.id ? "bg-gold/20" : "bg-zinc-700"}`}>
+                                    <Settings className={`h-5 w-5 ${selectedService === service.id ? "text-gold" : "text-white/70"}`} />
+                                  </div>
+                                  <div>
+                                    <h3 className="font-medium text-white text-sm sm:text-base">{service.name}</h3>
+                                    <div className="flex items-center space-x-2 mt-1">
+                                      <Badge variant="outline" className="text-gold border-gold/30 text-xs">
+                                        {(service.currency || 'USD') + ' ' + service.base_price}
+                                      </Badge>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
+                              <p className="text-sm text-white/70 mb-2">{service.description}</p>
                             </div>
-                            <p className="text-sm text-white/70 mb-4">{service.description}</p>
-                            <div className="grid grid-cols-2 gap-2">
-                              {service.features.map((feature, index) => (
-                                <div key={index} className="flex items-center space-x-2">
-                                  <CheckCircle className="h-3 w-3 text-gold" />
-                                  <span className="text-xs text-white/80">{feature}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -319,87 +401,101 @@ export default function BookingPage() {
               {/* Step 2: Date, Time & Location */}
               {currentStep === 2 && (
                 <div className="space-y-6">
+                  {/* Date & Time */}
                   <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardHeader>
                       <CardTitle className="text-white text-xl sm:text-2xl">Select Date & Time</CardTitle>
-                      <CardDescription className="text-white/70">
-                        Choose your preferred appointment slot
-                      </CardDescription>
+                      <CardDescription className="text-white/70">Choose a date and available time slot</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-white/80 mb-2">Preferred Date</label>
-                          <Input
-                            type="date"
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            min={new Date().toISOString().split("T")[0]}
-                            className="bg-zinc-800/50 border-zinc-700 text-white h-12"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-white/80 mb-2">Available Times</label>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                            {timeSlots.map((time) => (
-                              <button
-                                key={time}
-                                type="button"
-                                className={`p-2 text-sm rounded border transition-all ${
-                                  selectedTime === time
-                                    ? "border-gold bg-gold/10 text-gold"
-                                    : "border-zinc-700 bg-zinc-800/30 text-white hover:border-zinc-600"
-                                }`}
-                                onClick={() => setSelectedTime(time)}
-                              >
-                                {time}
-                              </button>
-                            ))}
+                    <CardContent className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-white/80 mb-2">Preferred Date *</label>
+                        <Input
+                          type="date"
+                          value={selectedDate}
+                          onChange={(e) => {
+                            setSelectedDate(e.target.value)
+                            setSelectedTimeSlotId("")
+                            setSelectedTime("")
+                          }}
+                          className="bg-zinc-800/50 border-zinc-700 text-white h-12"
+                        />
+                      </div>
+                      <div>
+                        <div className="text-sm text-white/80 mb-2">Available Time Slots</div>
+                        {slotsLoading ? (
+                          <div className="text-white/70">Loading time slots...</div>
+                        ) : slotsError ? (
+                          <div className="text-red-400">{slotsError}</div>
+                        ) : timeSlots.length === 0 ? (
+                          <div className="text-white/70">No time slots available for the selected date.</div>
+                        ) : (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                            {timeSlots.map((slot) => {
+                              const label = `${slot.start_time} - ${slot.end_time}`
+                              const selected = selectedTimeSlotId === slot.id
+                              return (
+                                <button
+                                  key={slot.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedTimeSlotId(slot.id)
+                                    setSelectedTime(label)
+                                  }}
+                                  className={`px-3 py-2 rounded border text-sm transition ${
+                                    selected ? "border-gold bg-gold/10 text-gold" : "border-zinc-700 text-white/80 hover:border-zinc-600"
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              )
+                            })}
                           </div>
-                        </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
 
+                  {/* Location */}
                   <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardHeader>
-                      <CardTitle className="text-white">Service Location</CardTitle>
-                      <CardDescription className="text-white/70">
-                        Where would you like the service performed?
-                      </CardDescription>
+                      <CardTitle className="text-white text-xl sm:text-2xl">Select Location</CardTitle>
+                      <CardDescription className="text-white/70">Where would you like the service performed?</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-4">
-                        {locations.map((location) => {
-                          const Icon = location.icon
-                          return (
-                            <div
-                              key={location.id}
-                              className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                                selectedLocation === location.id
-                                  ? "border-gold bg-gold/10"
-                                  : "border-zinc-700 bg-zinc-800/30 hover:border-zinc-600"
-                              }`}
-                              onClick={() => setSelectedLocation(location.id)}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                  <Icon
-                                    className={`h-5 w-5 ${selectedLocation === location.id ? "text-gold" : "text-white/70"}`}
-                                  />
-                                  <span className="text-white font-medium">{location.name}</span>
+                        {loading ? (
+                          <div className="text-white/70">Loading locations...</div>
+                        ) : error ? (
+                          <div className="text-red-400">{error}</div>
+                        ) : (
+                          locations.map((location) => {
+                            return (
+                              <div
+                                key={location.id}
+                                className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                                  selectedLocation === location.id
+                                    ? "border-gold bg-gold/10"
+                                    : "border-zinc-700 bg-zinc-800/30 hover:border-zinc-600"
+                                }`}
+                                onClick={() => setSelectedLocation(location.id)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <MapPin className={`h-5 w-5 ${selectedLocation === location.id ? "text-gold" : "text-white/70"}`} />
+                                    <span className="text-white font-medium">{location.name}</span>
+                                  </div>
+                                  <Badge
+                                    variant="outline"
+                                    className={Number(location.additional_cost) > 0 ? "text-gold border-gold/30" : "text-green-400 border-green-400/30"}
+                                  >
+                                    {Number(location.additional_cost) > 0 ? `+ ${(location.currency || 'USD')} ${location.additional_cost}` : "Free"}
+                                  </Badge>
                                 </div>
-                                <Badge
-                                  variant="outline"
-                                  className={`${location.price === "Free" ? "text-green-400 border-green-400/30" : "text-gold border-gold/30"}`}
-                                >
-                                  {location.price}
-                                </Badge>
                               </div>
-                            </div>
-                          )
-                        })}
+                            )
+                          })
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -639,7 +735,6 @@ export default function BookingPage() {
                                   <path
                                     fillRule="evenodd"
                                     d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                    clipRule="evenodd"
                                   />
                                 </svg>
                                 <span>Privacy protected</span>
@@ -649,7 +744,6 @@ export default function BookingPage() {
                                   <path
                                     fillRule="evenodd"
                                     d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                    clipRule="evenodd"
                                   />
                                 </svg>
                                 <span>Unsubscribe anytime</span>
@@ -683,15 +777,12 @@ export default function BookingPage() {
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-white/70">Service:</span>
-                            <span className="text-white">{getSelectedService()?.name}</span>
+                            <span className="text-white">{getSelectedService?.name}</span>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-white/70">Duration:</span>
-                            <span className="text-white">{getSelectedService()?.duration}</span>
-                          </div>
+                          {/* Duration not available from backend; can be added later */}
                           <div className="flex justify-between">
                             <span className="text-white/70">Location:</span>
-                            <span className="text-white">{getSelectedLocation()?.name}</span>
+                            <span className="text-white">{getSelectedLocation?.name}</span>
                           </div>
                         </div>
                       </div>
@@ -746,16 +837,26 @@ export default function BookingPage() {
 
                       {/* Pricing */}
                       <div className="p-4 rounded-lg bg-gold/10 border border-gold/30">
-                        <div className="flex justify-between items-center">
-                          <span className="text-white font-medium">Total Estimated Price:</span>
-                          <span className="text-gold font-bold text-lg">{getSelectedService()?.price}</span>
-                        </div>
-                        {getSelectedLocation()?.price !== "Free" && (
-                          <div className="flex justify-between items-center mt-2 text-sm">
-                            <span className="text-white/70">Location Fee:</span>
-                            <span className="text-gold">{getSelectedLocation()?.price}</span>
-                          </div>
-                        )}
+                        {(() => {
+                          const base = Number(getSelectedService?.base_price || 0)
+                          const fee = Number(getSelectedLocation?.additional_cost || 0)
+                          const currency = getSelectedService?.currency || getSelectedLocation?.currency || 'USD'
+                          const total = base + fee
+                          return (
+                            <>
+                              <div className="flex justify-between items-center">
+                                <span className="text-white font-medium">Total Estimated Price:</span>
+                                <span className="text-gold font-bold text-lg">{currency} {total.toFixed(2)}</span>
+                              </div>
+                              {fee > 0 && (
+                                <div className="flex justify-between items-center mt-2 text-sm">
+                                  <span className="text-white/70">Location Fee:</span>
+                                  <span className="text-gold">{currency} {fee.toFixed(2)}</span>
+                                </div>
+                              )}
+                            </>
+                          )
+                        })()}
                       </div>
                     </CardContent>
                   </Card>

@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Eye, EyeOff, ArrowLeft } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
 import LanguageSwitcher from "@/components/language-switcher"
+import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client"
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -25,14 +26,45 @@ export default function SignupPage() {
     agreeToTerms: false,
     subscribeNewsletter: false,
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { t, isRTL } = useLanguage()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle signup logic here
-    console.log("Signup attempt:", formData)
-    // Redirect to dashboard on successful signup
-    window.location.href = "/dashboard"
+    setError(null)
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+    if (!formData.agreeToTerms) {
+      setError("You must agree to the Terms of Service and Privacy Policy")
+      return
+    }
+    setLoading(true)
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            phone: formData.phone,
+            newsletter: formData.subscribeNewsletter,
+          },
+        },
+      })
+      if (error) throw error
+      const params = new URLSearchParams(window.location.search)
+      const redirect = params.get("redirect") || "/"
+      window.location.href = redirect
+    } catch (err: any) {
+      setError(err?.message || "Failed to sign up")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,7 +265,11 @@ export default function SignupPage() {
                 </label>
               </div>
 
-              <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-black font-medium">
+              {error && (
+                <div className="text-sm text-red-400">{error}</div>
+              )}
+
+              <Button disabled={loading} type="submit" className="w-full bg-gold hover:bg-gold/90 text-black font-medium">
                 {t.auth.signUp}
               </Button>
             </form>

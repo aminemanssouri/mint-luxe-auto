@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Eye, EyeOff, ArrowLeft } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
 import LanguageSwitcher from "@/components/language-switcher"
+import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -18,14 +19,29 @@ export default function LoginPage() {
     email: "",
     password: "",
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { t, isRTL } = useLanguage()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login logic here
-    console.log("Login attempt:", formData)
-    // Redirect to dashboard on successful login
-    window.location.href = "/dashboard"
+    setError(null)
+    setLoading(true)
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      })
+      if (error) throw error
+      const params = new URLSearchParams(window.location.search)
+      const redirect = params.get("redirect") || "/"
+      window.location.href = redirect
+    } catch (err: any) {
+      setError(err?.message || "Failed to sign in")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,7 +137,11 @@ export default function LoginPage() {
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-black font-medium">
+              {error && (
+                <div className="text-sm text-red-400">{error}</div>
+              )}
+
+              <Button disabled={loading} type="submit" className="w-full bg-gold hover:bg-gold/90 text-black font-medium">
                 {t.auth.signIn}
               </Button>
             </form>

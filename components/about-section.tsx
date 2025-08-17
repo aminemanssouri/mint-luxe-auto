@@ -36,7 +36,7 @@ export default function AboutSection() {
             />
             <div className="relative aspect-[4/5] overflow-hidden rounded-lg">
               <Image
-                src="/placeholder.svg?height=600&width=480"
+                src="/images/home/025f45beb086542f4f6a106ec9f9f0e4.webp"
                 alt="Luxury Car Experience"
                 fill
                 className="object-cover"

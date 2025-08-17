@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useParams } from "next/navigation"
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
@@ -25,68 +26,110 @@ import ContactOwnerModal from "@/components/contact-owner-modal"
 import { useLanguage } from "@/components/language-provider"
 import LanguageSwitcher from "@/components/language-switcher"
 
-// Mock data for the car details
-const carData = {
-  id: "phantom-spectre",
-  name: "Phantom Spectre",
-  year: 2024,
-  price: "$450,000",
-  location: "Beverly Hills, CA",
-  description:
-    "The Phantom Spectre represents the pinnacle of automotive luxury and performance. This limited edition masterpiece combines handcrafted excellence with cutting-edge technology to deliver an unparalleled driving experience. The cabin is adorned with the finest materials, including hand-stitched leather, polished wood veneers, and brushed aluminum accents.\n\nPowered by a magnificent V12 engine that produces 563 horsepower, the Phantom Spectre glides from 0 to 60 mph in just 4.3 seconds, all while maintaining its signature whisper-quiet cabin. The advanced suspension system reads the road ahead, adjusting in real-time to ensure the smoothest possible ride.\n\nThis particular model features a bespoke Celestial Blue exterior with Ivory White interior, a combination exclusive to only five vehicles worldwide. The starlight headliner recreates the night sky with over 1,600 hand-placed fiber optic lights, programmable to your preferred constellation.",
-  specifications: {
-    engine: "6.75L V12 Twin-Turbo",
-    power: "563 hp",
-    torque: "664 lb-ft",
-    acceleration: "0-60 mph in 4.3s",
-    topSpeed: "155 mph (limited)",
-    transmission: "8-Speed Automatic",
-    drivetrain: "Rear-Wheel Drive",
-    fuelEconomy: "12 city / 20 hwy",
-    fuelTank: "23.8 gallons",
-    range: "476 miles",
-    seating: "5 passengers",
-    dimensions: '227.2" L x 79.5" W x 65.2" H',
-    weight: "5,862 lbs",
-    year: "2024",
-  },
-  features: [
-    "Starlight Headliner",
-    "Bespoke Audio System",
-    "Rear Theater Configuration",
-    "Picnic Tables",
-    "Champagne Cooler",
-    "Umbrella Storage",
-    "Self-Closing Doors",
-    "Active Cruise Control",
-    "Night Vision",
-    "Panoramic Sky Lounge",
-    "Massage Seats",
-    "Lambswool Floor Mats",
-  ],
-  images: [
-    "/placeholder.svg?height=600&width=1000",
-    "/placeholder.svg?height=600&width=1000",
-    "/placeholder.svg?height=600&width=1000",
-    "/placeholder.svg?height=600&width=1000",
-    "/placeholder.svg?height=600&width=1000",
-  ],
-  videoThumbnail: "/placeholder.svg?height=600&width=1000",
-  videoUrl: "#",
-  owner: {
-    name: "Luxury Cars Collection",
-    response: "Usually responds within 2 hours",
-    rating: 4.9,
-    reviews: 24,
-  },
-}
+// Fallback placeholders; real data comes from /api/vehicles/[id]
+const PLACEHOLDER_IMG = "/placeholder.svg?height=600&width=1000"
 
-export default function CarDetailsPage({ params }: { params: { id: string } }) {
+export default function CarDetailsPage() {
+  const params = useParams<{ id: string }>()
+  const id = (params?.id as string) || ""
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [showVideo, setShowVideo] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
   const [liked, setLiked] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [item, setItem] = useState<any | null>(null)
   const { t, isRTL } = useLanguage()
+
+  // Load detail from API
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch(`/api/vehicles/${id}`, { cache: "no-store" })
+        if (!res.ok) throw new Error(`Failed to load vehicle: ${res.status}`)
+        const json = await res.json()
+        if (!cancelled) {
+          if (json?.ok && json.item) setItem(json.item)
+          else throw new Error(json?.error || "Vehicle not found")
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || String(e))
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
+  // Map API item to previous UI shape to minimize changes
+  const carData = useMemo(() => {
+    if (!item) {
+      return {
+        id: id,
+        name: "Loading...",
+        year: "",
+        price: "",
+        location: "",
+        description: "",
+        specifications: {},
+        features: [],
+        images: [PLACEHOLDER_IMG],
+        videoThumbnail: PLACEHOLDER_IMG,
+        videoUrl: "#",
+        owner: { name: "", response: "", rating: 0, reviews: 0 },
+      }
+    }
+
+    // Build specifications based on available specs object
+    const specs = item.car_specs || item.motor_specs || item.boat_specs || item.yacht_specs || {}
+    const specMap: Record<string, string> = {}
+    if (specs.engine) specMap.engine = specs.engine
+    if (specs.horsepower) specMap.power = `${specs.horsepower} hp`
+    if (specs.torque) specMap.torque = `${specs.torque}`
+    if (specs.acceleration) specMap.acceleration = `${specs.acceleration}`
+    if (specs.top_speed || specs.top_speed_mph || specs.top_speed_knots) {
+      specMap.topSpeed = `${specs.top_speed || specs.top_speed_mph || specs.top_speed_knots}`
+    }
+    if (specs.transmission) specMap.transmission = `${specs.transmission}`
+    if (specs.drivetrain) specMap.drivetrain = `${specs.drivetrain}`
+    if (specs.fuel_economy) specMap.fuelEconomy = `${specs.fuel_economy}`
+    if (specs.fuel_tank_gallons || specs.fuel_tank_gal) specMap.fuelTank = `${specs.fuel_tank_gallons || specs.fuel_tank_gal} gallons`
+    if (specs.range_miles) specMap.range = `${specs.range_miles} miles`
+    if (specs.seating_capacity) specMap.seating = `${specs.seating_capacity} passengers`
+    if (specs.weight_lbs) specMap.weight = `${specs.weight_lbs} lbs`
+
+    const images: string[] = (item.images || []).map((i: any) => i.image_url)
+    const primary = images[0] || PLACEHOLDER_IMG
+
+    const contacts = item.contacts || []
+    const ownerName = contacts[0]?.contact_name || ""
+    const ownerResponse = contacts[0]?.response_time || ""
+
+    return {
+      id: item.id,
+      name: item.name,
+      year: item.year,
+      price: item.price ? `$${Number(item.price).toLocaleString()}` : "",
+      location: item.location || "",
+      description: item.description || "",
+      specifications: specMap,
+      features: (item.features || []).map((f: any) => f.feature_name),
+      images: images.length ? images : [PLACEHOLDER_IMG],
+      videoThumbnail: primary,
+      videoUrl: "#",
+      owner: {
+        name: ownerName || "",
+        response: ownerResponse || "",
+        rating: 5,
+        reviews: 0,
+      },
+    }
+  }, [item, id])
 
   const { scrollYProgress } = useScroll()
   const headerOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0])
@@ -190,7 +233,7 @@ export default function CarDetailsPage({ params }: { params: { id: string } }) {
               transition={{ delay: 0.3 }}
               className="max-w-3xl"
             >
-              <Badge className="mb-4 bg-gold/80 hover:bg-gold text-black">Featured</Badge>
+              <Badge className="mb-4 bg-gold/80 hover:bg-gold text-black">{item?.featured ? "Featured" : t.common.details}</Badge>
               <h1 className="mb-2 text-4xl font-bold text-white md:text-6xl">{carData.name}</h1>
               <div className={`flex items-center ${isRTL ? "space-x-reverse space-x-2" : "space-x-2"}`}>
                 <span className="text-2xl font-bold text-gold">{carData.price}</span>
@@ -288,7 +331,7 @@ export default function CarDetailsPage({ params }: { params: { id: string } }) {
               >
                 <h2 className="mb-6 text-2xl font-bold text-white">{t.common.description}</h2>
                 <div className="prose prose-invert max-w-none">
-                  {carData.description.split("\n\n").map((paragraph, index) => (
+                  {(carData.description || "").split("\n\n").map((paragraph: string, index: number) => (
                     <p key={index} className="mb-4 text-white/80">
                       {paragraph}
                     </p>
@@ -327,7 +370,7 @@ export default function CarDetailsPage({ params }: { params: { id: string } }) {
               >
                 <h2 className="mb-6 text-2xl font-bold text-white">{t.common.features}</h2>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-                  {carData.features.map((feature, index) => (
+                  {carData.features.map((feature: string, index: number) => (
                     <div
                       key={index}
                       className={`flex items-center rounded-lg bg-zinc-900/30 p-3 ${isRTL ? "space-x-reverse space-x-3" : "space-x-3"}`}
