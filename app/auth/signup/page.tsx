@@ -75,6 +75,28 @@ export default function SignupPage() {
     })
   }
 
+  const handleOAuth = async (provider: 'google' | 'apple') => {
+    setError(null)
+    setLoading(true)
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const params = new URLSearchParams(window.location.search)
+      const redirect = params.get("redirect") || "/"
+      const origin = window.location.origin
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${origin}${redirect}`,
+        },
+      })
+      if (error) throw error
+      // Supabase will handle browser redirect
+    } catch (err: any) {
+      setError(err?.message || `Failed to continue with ${provider}`)
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-gradient-to-br from-gold/5 to-transparent" />
@@ -285,10 +307,20 @@ export default function SignupPage() {
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <Button variant="outline" className="border-zinc-700 bg-zinc-800/50 text-white hover:bg-zinc-800">
+                <Button
+                  variant="outline"
+                  className="border-zinc-700 bg-zinc-800/50 text-white hover:bg-zinc-800"
+                  onClick={() => handleOAuth('google')}
+                  disabled={loading}
+                >
                   {t.auth.google}
                 </Button>
-                <Button variant="outline" className="border-zinc-700 bg-zinc-800/50 text-white hover:bg-zinc-800">
+                <Button
+                  variant="outline"
+                  className="border-zinc-700 bg-zinc-800/50 text-white hover:bg-zinc-800"
+                  onClick={() => handleOAuth('apple')}
+                  disabled={loading}
+                >
                   {t.auth.apple}
                 </Button>
               </div>

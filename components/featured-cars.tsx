@@ -1,40 +1,61 @@
 "use client"
 
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, useInView } from "framer-motion"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ChevronRight } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
-
-const cars = [
-  {
-    id: 1,
-    name: "Phantom Spectre",
-    price: "$450,000",
-    image: "/placeholder.svg?height=300&width=500",
-    specs: "V12 Engine • 563 HP • 0-60 in 4.3s",
-  },
-  {
-    id: 2,
-    name: "Celestial GT",
-    price: "$380,000",
-    image: "/placeholder.svg?height=300&width=500",
-    specs: "V8 Twin-Turbo • 641 HP • 0-60 in 3.1s",
-  },
-  {
-    id: 3,
-    name: "Sovereign Wraith",
-    price: "$520,000",
-    image: "/placeholder.svg?height=300&width=500",
-    specs: "V12 Engine • 624 HP • 0-60 in 4.4s",
-  },
-]
+import Link from "next/link"
+type Vehicle = {
+  id: string
+  name: string
+  price: number
+  image: string
+  specs?: string
+}
 
 export default function FeaturedCars() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, amount: 0.2 })
   const { t, isRTL } = useLanguage()
+  const [cars, setCars] = useState<Vehicle[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      try {
+        setLoading(true)
+        // Fetch a pool of vehicles, then pick 3 at random on the client
+        const res = await fetch("/api/vehicles?limit=60&sort=featured")
+        if (!res.ok) throw new Error(`Failed to load vehicles: ${res.status}`)
+        const json = await res.json()
+        const items: any[] = Array.isArray(json?.items) ? json.items : []
+        // Map to local type and randomize
+        const mapped: Vehicle[] = items.map((v: any) => ({
+          id: v.id,
+          name: v.name,
+          price: Number(v.price) || 0,
+          image: v.image || "/placeholder.svg?height=300&width=500",
+          specs: v.specs || "",
+        }))
+        // Shuffle and take 3
+        for (let i = mapped.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[mapped[i], mapped[j]] = [mapped[j], mapped[i]]
+        }
+        if (active) setCars(mapped.slice(0, 3))
+      } catch (e) {
+        if (active) setCars([])
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -78,7 +99,7 @@ export default function FeaturedCars() {
           animate={isInView ? "show" : "hidden"}
           className="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
         >
-          {cars.map((car) => (
+          {(loading ? [] : cars).map((car) => (
             <motion.div
               key={car.id}
               variants={itemVariants}
@@ -95,14 +116,26 @@ export default function FeaturedCars() {
               <div className="p-6">
                 <div className={`mb-4 flex items-center ${isRTL ? "justify-start" : "justify-between"}`}>
                   <h3 className="text-xl font-bold text-white">{car.name}</h3>
-                  <span className={`text-lg font-medium text-gold ${isRTL ? "mr-auto" : ""}`}>{car.price}</span>
+                  <span className={`text-lg font-medium text-gold ${isRTL ? "mr-auto" : ""}`}>{
+                    car.price >= 1000000
+                      ? `$${(car.price / 1000000).toFixed(1)}M`
+                      : car.price >= 1000
+                        ? `$${(car.price / 1000).toFixed(0)}K`
+                        : `$${car.price.toLocaleString()}`
+                  }</span>
                 </div>
-                <p className="mb-6 text-sm text-white/60">{car.specs}</p>
+                {car.specs ? (
+                  <p className="mb-6 text-sm text-white/60">{car.specs}</p>
+                ) : (
+                  <p className="mb-6 text-sm text-white/60">&nbsp;</p>
+                )}
                 <div className={`flex ${isRTL ? "justify-start space-x-reverse space-x-4" : "justify-between"}`}>
-                  <Button variant="outline" className="border-white/20 text-black hover:bg-gold/20">
-                    {t.common.details}
+                  <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800" asChild>
+                    <Link href={`/cars/${car.id}`}>{t.common.details}</Link>
                   </Button>
-                  <Button className="bg-gold hover:bg-gold/90 text-black">{t.common.reserve}</Button>
+                  <Button className="bg-gold hover:bg-gold/90 text-black" asChild>
+                    <Link href="/services/booking">{t.common.reserve}</Link>
+                  </Button>
                 </div>
               </div>
             </motion.div>
@@ -115,11 +148,13 @@ export default function FeaturedCars() {
           transition={{ delay: 0.8, duration: 0.6 }}
           className="mt-12 text-center"
         >
-          <Button variant="link" className="text-gold group">
-            {t.common.viewMore}
-            <ChevronRight
-              className={`ml-1 h-4 w-4 transition-transform group-hover:translate-x-1 ${isRTL ? "rotate-180" : ""}`}
-            />
+          <Button variant="link" className="text-gold group" asChild>
+            <Link href="/collection">
+              {t.common.viewMore}
+              <ChevronRight
+                className={`ml-1 h-4 w-4 transition-transform group-hover:translate-x-1 ${isRTL ? "rotate-180" : ""}`}
+              />
+            </Link>
           </Button>
         </motion.div>
       </div>

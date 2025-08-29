@@ -10,6 +10,35 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'logo.clearbit.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.scene7.com',
+        pathname: '/is/image/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'azimutyachts.com',
+        pathname: '/wp-content/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.wandaloo.com',
+        pathname: '/files/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.hearstapps.com',
+        pathname: '/hmg-prod/images/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.charles-pozzi.fr',
+        pathname: '/wp-content/uploads/**',
+      },
     ],
   },
   compress: true,

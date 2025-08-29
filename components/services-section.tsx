@@ -123,31 +123,19 @@ export default function ServicesSection() {
                   <CardDescription className="text-white/70">{service.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {authChecked && user ? (
-                    <Button
-                      className="w-full bg-transparent border border-gold text-gold hover:bg-gold hover:text-black transition-all duration-300 group-hover:bg-gold group-hover:text-black"
-                      onClick={() => (window.location.href = "/services/booking")}
-                    >
-                      {t.services.bookService}
-                      <ArrowRight className={`h-4 w-4 ${isRTL ? "mr-2 rotate-180" : "ml-2"}`} />
-                    </Button>
-                  ) : (
-                    <div className={`flex ${isRTL ? 'flex-row-reverse' : ''} gap-2`}>
-                      <Button
-                        className="flex-1 bg-transparent border border-gold text-gold hover:bg-gold hover:text-black"
-                        onClick={() => (window.location.href = "/auth/login?redirect=/services/booking")}
-                      >
-                        Login
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex-1 border-zinc-700 text-white hover:bg-zinc-800"
-                        onClick={() => (window.location.href = "/auth/signup?redirect=/services/booking")}
-                      >
-                        Sign up
-                      </Button>
-                    </div>
-                  )}
+                  <Button
+                    className="w-full bg-gold hover:bg-gold/90 text-black"
+                    onClick={() => {
+                      if (authChecked && user) {
+                        window.location.href = "/services/booking"
+                      } else {
+                        window.location.href = "/auth/login?redirect=/services/booking"
+                      }
+                    }}
+                  >
+                    {t.services.bookService}
+                    <ArrowRight className={`${isRTL ? "mr-2 rotate-180" : "ml-2"} h-4 w-4`} />
+                  </Button>
                 </CardContent>
               </Card>
             </motion.div>

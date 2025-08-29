@@ -206,6 +206,10 @@ export default function BookingPage() {
         location_fee: getSelectedLocation?.additional_cost ?? 0,
         service_address: formData.address || null,
         special_request: formData.specialRequests || null,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
       }
       const res = await fetch("/api/bookings", {
         method: "POST",
@@ -282,11 +286,11 @@ export default function BookingPage() {
         <div className="container mx-auto px-4">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Link
-              href="/dashboard"
+              href="/"
               className={`inline-flex items-center text-gold hover:text-gold/80 transition-colors ${isRTL ? "flex-row-reverse" : ""}`}
             >
               <ArrowLeft className={`h-4 w-4 ${isRTL ? "ml-2 rotate-180" : "mr-2"}`} />
-              <span className="hidden sm:inline">{t.common.backToDashboard}</span>
+              <span className="hidden sm:inline">{t.common.backToHome}</span>
               <span className="sm:hidden">Back</span>
             </Link>
             <LanguageSwitcher />

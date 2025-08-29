@@ -151,7 +151,7 @@ export default function CarDetailsPage() {
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             <Link
-              href="/dashboard"
+              href="/"
               className={`flex items-center text-white hover:text-gold transition-colors ${isRTL ? "flex-row-reverse" : ""}`}
             >
               <ArrowLeft className={`h-5 w-5 ${isRTL ? "ml-2 rotate-180" : "mr-2"}`} />
