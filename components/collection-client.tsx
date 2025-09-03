@@ -209,8 +209,8 @@ export default function CollectionClient({
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/50 sticky top-0 z-40">
-        <div className="container mx-auto px-4">
+      <header className="border-b border-zinc-800 bg-zinc-900/50 sticky top-14 md:top-20 z-40">
+        <div className="container mx-auto px-3 sm:px-4 pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
           <div className="flex h-16 items-center justify-between">
             <div className={`flex items-center ${isRTL ? "space-x-reverse space-x-4" : "space-x-4"}`}>
               <Link
@@ -238,7 +238,7 @@ export default function CollectionClient({
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-8">
         <div className="grid gap-8 lg:grid-cols-4">
           {/* Filters Sidebar */}
           <div className={`lg:col-span-1 ${showFilters ? "block" : "hidden lg:block"}`}>
@@ -415,7 +415,7 @@ export default function CollectionClient({
           {/* Main Content */}
           <div className="lg:col-span-3">
             {/* Results Header */}
-            <div className={`flex items-center justify-between mb-8 ${isRTL ? "flex-row-reverse" : ""}`}>
+            <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 ${isRTL ? "sm:flex-row-reverse" : ""}`}>
               <div>
                 <h2 className="text-2xl font-bold text-white mb-2">
                   Luxury Collection
@@ -429,7 +429,7 @@ export default function CollectionClient({
               </div>
               <div className={`flex items-center ${isRTL ? "space-x-reverse space-x-4" : "space-x-4"}`}>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-48 bg-zinc-800/50 border-zinc-700 text-white">
+                  <SelectTrigger className="w-full sm:w-48 bg-zinc-800/50 border-zinc-700 text-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-800 border-zinc-700">
@@ -451,7 +451,7 @@ export default function CollectionClient({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
+                className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
               >
                 {filteredVehicles.map((vehicle, index) => (
                   <motion.div
@@ -552,8 +552,8 @@ export default function CollectionClient({
             </AnimatePresence>
 
             {/* Pagination Controls */}
-            <div className={`mt-8 flex items-center justify-between ${isRTL ? "flex-row-reverse" : ""}`}>
-              <div className={`flex items-center ${isRTL ? "space-x-reverse space-x-2" : "space-x-2"}`}>
+            <div className={`mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${isRTL ? "sm:flex-row-reverse" : ""}`}>
+              <div className={`flex flex-wrap items-center gap-2 ${isRTL ? "space-x-reverse" : ""}`}>
                 <Button variant="outline" className="border-zinc-700 text-white" disabled={page <= 1 || loading} onClick={() => setPage(1)}>
                   First
                 </Button>
@@ -630,17 +630,169 @@ export default function CollectionClient({
               initial={{ x: isRTL ? "100%" : "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: isRTL ? "100%" : "-100%" }}
-              className={`absolute top-0 h-full w-80 bg-zinc-900 border-zinc-800 ${isRTL ? "right-0 border-l" : "left-0 border-r"}`}
+              className={`absolute top-0 h-full w-80 max-w-[90%] bg-zinc-900 border-zinc-800 ${isRTL ? "right-0 border-l" : "left-0 border-r"}`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-6">
-                <div className={`flex items-center justify-between mb-6 ${isRTL ? "flex-row-reverse" : ""}`}>
-                  <h2 className="text-lg font-bold text-white">Filters</h2>
-                  <Button variant="ghost" size="icon" onClick={() => setShowFilters(false)} className="text-white hover:text-gold">
-                    <X className="h-5 w-5" />
-                  </Button>
+              <div className="flex h-full flex-col">
+                <div className="p-4 pb-2 pt-[calc(env(safe-area-inset-top)+16px)]">
+                  <div className={`flex items-center justify-between ${isRTL ? "flex-row-reverse" : ""}`}>
+                    <h2 className="text-lg font-bold text-white">Filters</h2>
+                    <Button variant="ghost" size="icon" onClick={() => setShowFilters(false)} className="text-white hover:text-gold">
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
-                {/* Same filter content as sidebar could be mirrored here if desired */}
+                <div className="px-4 pb-24 overflow-y-auto">
+                  <div className="space-y-5">
+                    {/* Search */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-2">Search</label>
+                      <div className="relative">
+                        <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 ${isRTL ? "right-3" : "left-3"}`} />
+                        <Input
+                          placeholder="Search vehicles..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className={`bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-500 ${isRTL ? "pr-10" : "pl-10"}`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Vehicle Type */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-2">Vehicle Type</label>
+                      <Select value={selectedType} onValueChange={(v) => setSelectedType(v as any)}>
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-800 border-zinc-700">
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="car">Cars</SelectItem>
+                          <SelectItem value="motorcycle">Motorcycles</SelectItem>
+                          <SelectItem value="boat">Yachts & Boats</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Brand */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-2">Brand</label>
+                      <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-800 border-zinc-700">
+                          <SelectItem value="all">All Brands</SelectItem>
+                          {allBrands.map((brand: string) => (
+                            <SelectItem key={brand} value={brand}>
+                              {brand}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Category */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-2">Category</label>
+                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-800 border-zinc-700">
+                          <SelectItem value="all">All Categories</SelectItem>
+                          {allCategories.map((category: string) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Location */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-2">Location</label>
+                      <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-800 border-zinc-700">
+                          <SelectItem value="all">All Locations</SelectItem>
+                          {locations.map((location) => (
+                            <SelectItem key={location} value={location}>
+                              {location}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Year */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-2">Year</label>
+                      <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-800 border-zinc-700">
+                          <SelectItem value="all">All Years</SelectItem>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Price Range */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-2">Price Range</label>
+                      <Select value={priceRange} onValueChange={setPriceRange}>
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-800 border-zinc-700">
+                          <SelectItem value="all">All Prices</SelectItem>
+                          <SelectItem value="0-100000">Under $100K</SelectItem>
+                          <SelectItem value="100000-500000">$100K - $500K</SelectItem>
+                          <SelectItem value="500000-1000000">$500K - $1M</SelectItem>
+                          <SelectItem value="1000000-5000000">$1M - $5M</SelectItem>
+                          <SelectItem value="5000000-999999999">Over $5M</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                {/* Bottom actions */}
+                <div className={`pointer-events-auto fixed bottom-0 left-0 right-0 pb-[calc(env(safe-area-inset-bottom)+8px)]`}>
+                  <div className={`mx-auto w-80 max-w-[90%] ${isRTL ? 'mr-0' : 'ml-0'}`}>
+                    <div className="bg-zinc-900 border-t border-zinc-800 p-4 flex items-center justify-between gap-3">
+                      <Button
+                        variant="outline"
+                        className="border-zinc-700 text-white flex-1"
+                        onClick={() => {
+                          setSelectedType("all")
+                          setSelectedBrand("all")
+                          setSelectedCategory("all")
+                          setPriceRange("all")
+                          setSelectedLocation("all")
+                          setSelectedYear("all")
+                          setSearchQuery("")
+                        }}
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        className="bg-gold hover:bg-gold/90 text-black flex-1"
+                        onClick={() => setShowFilters(false)}
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </motion.div>

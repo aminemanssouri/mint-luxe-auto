@@ -64,20 +64,20 @@ export default function Navbar() {
 
   return (
     <motion.header
-      className={`fixed top-0 z-40 w-full transition-all duration-300 ${
+      className={`fixed top-0 z-50 w-full transition-all duration-300 ${
         isScrolled ? "bg-black/80 backdrop-blur-md" : "bg-transparent"
       }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
     >
-      <div className="container mx-auto flex h-20 items-center justify-between px-4">
+      <div className="container mx-auto flex h-14 md:h-20 items-center justify-between px-3 sm:px-4 pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
         <Link href="/" className="flex items-center space-x-2">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="relative h-16 w-64"
+            className="relative h-10 w-40 sm:h-12 sm:w-48 md:h-16 md:w-64"
           >
             <Image
               src="/Gemini_Generated_Image_1vhj7r1vhj7r1vhj-removebg-preview.png"
@@ -159,12 +159,11 @@ export default function Navbar() {
 
         {/* Mobile Menu Button */}
         <div className="md:hidden flex items-center space-x-4">
-          <LanguageSwitcher />
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="text-white hover:bg-white/10"
+            className="text-white hover:bg-white/10 h-10 w-10"
           >
             {isMenuOpen ? <X /> : <Menu />}
           </Button>
@@ -180,6 +179,10 @@ export default function Navbar() {
           className="bg-black/95 md:hidden"
         >
           <div className="container mx-auto px-4 py-6">
+            {/* Mobile Language Switcher */}
+            <div className="mb-4 flex justify-end">
+              <LanguageSwitcher />
+            </div>
             <nav className="flex flex-col space-y-4">
               {[
                 { key: "home", href: "#home" },

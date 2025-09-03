@@ -100,7 +100,7 @@ export default function HeroSection() {
   }
 
   return (
-    <section className="relative h-screen w-full overflow-hidden">
+    <section className="relative min-h-[100svh] w-full overflow-hidden pt-16 md:pt-20">
       {/* Video Background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-black/50 z-10" />
@@ -132,7 +132,7 @@ export default function HeroSection() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mx-auto max-w-4xl"
           >
-            <h1 className="mb-6 text-4xl font-bold tracking-tight text-white md:text-6xl lg:text-7xl">
+            <h1 className="mb-6 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-6xl lg:text-7xl">
               {t.home.heroTitle.split("Luxury").map((part, index) => (
                 <span key={index}>
                   {part}
@@ -140,7 +140,7 @@ export default function HeroSection() {
                 </span>
               ))}
             </h1>
-            <p className="mb-8 text-lg text-white/80 md:text-xl max-w-2xl mx-auto">{t.home.heroSubtitle}</p>
+            <p className="mb-8 text-base text-white/80 sm:text-lg md:text-xl max-w-2xl mx-auto">{t.home.heroSubtitle}</p>
 
             {/* Search Filter Card */}
             <motion.div
@@ -150,7 +150,7 @@ export default function HeroSection() {
               className="mx-auto max-w-4xl"
             >
               <Card className="bg-black/30 backdrop-blur-md border-white/20">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   {/* Vehicle Type Selector */}
                   <div className="mb-6">
                     <div className={`flex justify-center ${isRTL ? "space-x-reverse space-x-2" : "space-x-2"}`}>
@@ -189,13 +189,13 @@ export default function HeroSection() {
                         placeholder={`Search ${getVehicleTypeLabel(vehicleType).toLowerCase()}...`}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className={`bg-white/10 border-white/30 text-white placeholder:text-white/60 ${isRTL ? "pr-10" : "pl-10"}`}
+                        className={`bg-white/10 border-white/30 text-white placeholder:text-white/60 text-sm ${isRTL ? "pr-10" : "pl-10"}`}
                       />
                     </div>
 
                     {/* Brand Selector */}
                     <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                      <SelectTrigger className="bg-white/10 border-white/30 text-white">
+                      <SelectTrigger className="bg-white/10 border-white/30 text-white text-sm">
                         <SelectValue placeholder="Any Brand" />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-900 text-white border-zinc-700">
@@ -210,7 +210,7 @@ export default function HeroSection() {
 
                     {/* Price Range */}
                     <Select value={selectedPriceRange} onValueChange={setSelectedPriceRange}>
-                      <SelectTrigger className="bg-white/10 border-white/30 text-white">
+                      <SelectTrigger className="bg-white/10 border-white/30 text-white text-sm">
                         <SelectValue placeholder="Any Price" />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-900 text-white border-zinc-700">
@@ -226,7 +226,7 @@ export default function HeroSection() {
                     {/* Search Button */}
                     <Button
                       onClick={handleSearch}
-                      className="bg-gold hover:bg-gold/90 text-black font-medium border-gold"
+                      className="bg-gold hover:bg-gold/90 text-black font-medium border-gold w-full md:w-auto"
                     >
                       <Search className={`h-4 w-4 ${isRTL ? "ml-2" : "mr-2"}`} />
                       <span className="font-semibold">Search</span>
@@ -267,7 +267,7 @@ export default function HeroSection() {
                               Location
                             </label>
                             <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                              <SelectTrigger className="bg-white/10 border-white/30 text-white">
+                              <SelectTrigger className="bg-white/10 border-white/30 text-white text-sm">
                                 <SelectValue placeholder="Any Location" />
                               </SelectTrigger>
                               <SelectContent className="bg-zinc-900 text-white border-zinc-700">
@@ -288,7 +288,7 @@ export default function HeroSection() {
                               Year
                             </label>
                             <Select value={selectedYear} onValueChange={setSelectedYear}>
-                              <SelectTrigger className="bg-white/10 border-white/30 text-white">
+                              <SelectTrigger className="bg-white/10 border-white/30 text-white text-sm">
                                 <SelectValue placeholder="Any Year" />
                               </SelectTrigger>
                               <SelectContent className="bg-zinc-900 text-white border-zinc-700">
@@ -364,13 +364,13 @@ export default function HeroSection() {
             >
               <Button
                 variant="outline"
-                className="border-white/30 text-white hover:bg-white/10 hover:text-white bg-transparent px-8 py-6 font-medium"
+                className="border-white/30 text-white hover:bg-white/10 hover:text-white bg-transparent px-5 py-3 sm:px-8 sm:py-6 font-medium"
                 onClick={() => (window.location.href = "/collection")}
               >
                 <span className="font-semibold">{t.home.exploreCollection}</span>
               </Button>
               <Button
-                className="bg-gold hover:bg-gold/90 text-black font-medium px-8 py-6 border-gold"
+                className="bg-gold hover:bg-gold/90 text-black font-medium px-5 py-3 sm:px-8 sm:py-6 border-gold"
                 onClick={() => (window.location.href = "/services/booking")}
               >
                 <span className="font-semibold text-black">{t.home.bookTestDrive}</span>
@@ -389,7 +389,7 @@ export default function HeroSection() {
         onClick={scrollToNextSection}
       >
         <motion.div animate={{ y: [0, 10, 0] }} transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.5 }}>
-          <ChevronDown className="h-10 w-10 text-white/70" />
+          <ChevronDown className="h-8 w-8 sm:h-10 sm:w-10 text-white/70" />
         </motion.div>
       </motion.div>
     </section>
