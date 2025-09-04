@@ -209,7 +209,7 @@ export default function CollectionClient({
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/50 sticky top-14 md:top-20 z-40">
+      <header className="border-b border-zinc-800 bg-zinc-900/50 sticky top-0 z-40">
         <div className="container mx-auto px-3 sm:px-4 pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
           <div className="flex h-16 items-center justify-between">
             <div className={`flex items-center ${isRTL ? "space-x-reverse space-x-4" : "space-x-4"}`}>
@@ -242,7 +242,7 @@ export default function CollectionClient({
         <div className="grid gap-8 lg:grid-cols-4">
           {/* Filters Sidebar */}
           <div className={`lg:col-span-1 ${showFilters ? "block" : "hidden lg:block"}`}>
-            <div className="sticky top-24">
+            <div className="sticky top-20">
               <Card className="bg-zinc-900/50 border-zinc-800">
                 <CardContent className="p-6">
                   <div className={`flex items-center justify-between mb-6 ${isRTL ? "flex-row-reverse" : ""}`}>
@@ -540,8 +540,17 @@ export default function CollectionClient({
                               {t.common.details}
                             </Link>
                           </Button>
-                          <Button size="sm" className="flex-1 bg-gold hover:bg-gold/90 text-black">
-                            {t.common.reserve}
+                          <Button size="sm" className="flex-1 bg-gold hover:bg-gold/90 text-black" asChild>
+                            <Link href={`/cars/${vehicle.id}/reserve`}>
+                              {t.common.reserve}
+                            </Link>
+                          </Button>
+                        </div>
+                        <div className="mt-2">
+                          <Button size="sm" variant="outline" className="w-full border-gold text-gold hover:bg-gold hover:text-black" asChild>
+                            <Link href="/appointment">
+                              Book Private Appointment
+                            </Link>
                           </Button>
                         </div>
                       </CardContent>

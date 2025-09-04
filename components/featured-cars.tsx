@@ -134,7 +134,7 @@ export default function FeaturedCars() {
                     <Link href={`/cars/${car.id}`}>{t.common.details}</Link>
                   </Button>
                   <Button className="bg-gold hover:bg-gold/90 text-black" asChild>
-                    <Link href="/services/booking">{t.common.reserve}</Link>
+                    <Link href={`/cars/${car.id}/reserve`}>{t.common.reserve}</Link>
                   </Button>
                 </div>
               </div>

@@ -92,18 +92,158 @@ export async function GET() {
     const user = authData.user
     if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 })
 
-    const { data, error } = await supabase
-      .from('bookings')
-      .select(`
-        id, booking_number, customer_id, service_id, vehicle_id, service_location_id, preferred_date, time_slot_id,
-        base_price, location_fee, total_price, service_address, status, payment_status, created_at, updated_at
-      `)
-      .eq('customer_id', user.id)
-      .order('created_at', { ascending: false })
+    // Get customer ID for this user
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
 
-    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 })
+    if (!customer) {
+      return NextResponse.json({ ok: true, bookings: [] })
+    }
 
-    return NextResponse.json({ ok: true, bookings: data ?? [] })
+    const customerId = customer.id
+
+    // Fetch all types of bookings and reservations
+    const [
+      serviceBookings,
+      vehicleReservations,
+      rentalAgreements,
+      purchaseAgreements,
+      appointments
+    ] = await Promise.all([
+      // Service bookings
+      supabase
+        .from('bookings')
+        .select(`
+          id, booking_number, service_id, vehicle_id, preferred_date, 
+          base_price, location_fee, total_price, status, payment_status, created_at,
+          services(id, name),
+          vehicles(id, name, brand, type)
+        `)
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false }),
+
+      // Vehicle reservations
+      supabase
+        .from('vehicle_reservations')
+        .select(`
+          id, reservation_number, vehicle_id, reservation_date, expiry_date,
+          deposit_amount, status, notes, created_at,
+          vehicles(id, name, brand, type)
+        `)
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false }),
+
+      // Rental agreements
+      supabase
+        .from('rental_agreements')
+        .select(`
+          id, agreement_number, vehicle_id, rental_start_date, rental_end_date,
+          total_amount, status, payment_status, created_at,
+          vehicles(id, name, brand, type)
+        `)
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false }),
+
+      // Purchase agreements
+      supabase
+        .from('purchase_agreements')
+        .select(`
+          id, agreement_number, vehicle_id, purchase_date, total_amount,
+          status, payment_status, created_at,
+          vehicles(id, name, brand, type)
+        `)
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false }),
+
+      // Appointments
+      supabase
+        .from('appointments')
+        .select(`
+          id, appointment_number, service_id, vehicle_id, appointment_date,
+          total_amount, status, payment_status, created_at,
+          services(id, name),
+          vehicles(id, name, brand, type)
+        `)
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false })
+    ])
+
+    // Combine and normalize all bookings
+    const allBookings: any[] = []
+
+    // Add service bookings
+    if (serviceBookings.data) {
+      serviceBookings.data.forEach(booking => {
+        allBookings.push({
+          ...booking,
+          type: 'service_booking',
+          booking_number: booking.booking_number,
+          preferred_date: booking.preferred_date,
+          total_price: booking.total_price
+        })
+      })
+    }
+
+    // Add vehicle reservations
+    if (vehicleReservations.data) {
+      vehicleReservations.data.forEach(reservation => {
+        allBookings.push({
+          ...reservation,
+          type: 'vehicle_reservation',
+          booking_number: reservation.reservation_number,
+          preferred_date: reservation.reservation_date,
+          total_price: reservation.deposit_amount,
+          payment_status: reservation.status === 'active' ? 'pending' : 'cancelled'
+        })
+      })
+    }
+
+    // Add rental agreements
+    if (rentalAgreements.data) {
+      rentalAgreements.data.forEach(agreement => {
+        allBookings.push({
+          ...agreement,
+          type: 'rental_agreement',
+          booking_number: agreement.agreement_number,
+          preferred_date: agreement.rental_start_date,
+          total_price: agreement.total_amount
+        })
+      })
+    }
+
+    // Add purchase agreements
+    if (purchaseAgreements.data) {
+      purchaseAgreements.data.forEach(agreement => {
+        allBookings.push({
+          ...agreement,
+          type: 'purchase_agreement',
+          booking_number: agreement.agreement_number,
+          preferred_date: agreement.purchase_date,
+          total_price: agreement.total_amount
+        })
+      })
+    }
+
+    // Add appointments
+    if (appointments.data) {
+      appointments.data.forEach(appointment => {
+        allBookings.push({
+          ...appointment,
+          type: 'appointment',
+          booking_number: appointment.appointment_number,
+          preferred_date: appointment.appointment_date,
+          total_price: appointment.total_amount
+        })
+      })
+    }
+
+    // Sort all bookings by created_at descending
+    allBookings.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+    return NextResponse.json({ ok: true, bookings: allBookings })
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || 'unexpected' }, { status: 500 })
   }

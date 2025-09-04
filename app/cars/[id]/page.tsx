@@ -25,6 +25,7 @@ import {
 import ContactOwnerModal from "@/components/contact-owner-modal"
 import { useLanguage } from "@/components/language-provider"
 import LanguageSwitcher from "@/components/language-switcher"
+import PageLoader from "@/components/page-loader"
 
 // Fallback placeholders; real data comes from /api/vehicles/[id]
 const PLACEHOLDER_IMG = "/placeholder.svg?height=600&width=1000"
@@ -144,19 +145,26 @@ export default function CarDetailsPage() {
     setActiveImageIndex((prev) => (prev === 0 ? carData.images.length - 1 : prev - 1))
   }
 
+  if (loading) return <PageLoader message="Loading vehicle details..." />
+  if (error || !item) return <PageLoader message="Vehicle not found" />
+
   return (
     <div className="min-h-screen bg-black">
       {/* Header with back button */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/80 to-transparent">
-        <div className="container mx-auto px-4">
+      <header className="border-b border-zinc-800 bg-zinc-900/50 sticky top-0 z-40">
+        <div className="container mx-auto px-4 pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
           <div className="flex h-16 items-center justify-between">
-            <Link
-              href="/"
-              className={`flex items-center text-white hover:text-gold transition-colors ${isRTL ? "flex-row-reverse" : ""}`}
-            >
-              <ArrowLeft className={`h-5 w-5 ${isRTL ? "ml-2 rotate-180" : "mr-2"}`} />
-              <span>{t.common.back}</span>
-            </Link>
+            <div className={`flex items-center ${isRTL ? "space-x-reverse space-x-4" : "space-x-4"}`}>
+              <Link
+                href="/collection"
+                className={`inline-flex items-center text-gold hover:text-gold/80 transition-colors ${isRTL ? "flex-row-reverse" : ""}`}
+              >
+                <ArrowLeft className={`h-4 w-4 ${isRTL ? "ml-2 rotate-180" : "mr-2"}`} />
+                <span>Back to Collection</span>
+              </Link>
+              <div className="h-6 w-px bg-zinc-700" />
+              <h1 className="text-xl font-bold text-white">Vehicle Details</h1>
+            </div>
             <div className={`flex items-center ${isRTL ? "space-x-reverse space-x-4" : "space-x-4"}`}>
               <LanguageSwitcher />
               <Button

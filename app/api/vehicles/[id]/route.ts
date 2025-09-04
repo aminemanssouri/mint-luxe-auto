@@ -3,9 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 
 // GET /api/vehicles/[id]
 // Returns a full vehicle with related images, features, contacts and specs tables
-export async function GET(_req: Request, context: { params: { id: string } }) {
+export async function GET(_req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = context.params
+    const { id } = await context.params
     if (!id) {
       return NextResponse.json({ ok: false, error: 'Missing id' }, { status: 400 })
     }
