@@ -49,8 +49,9 @@ async function getCustomerId(): Promise<string | null> {
   return customer?.id || null
 }
 
-export default async function RentPage({ params }: { params: { id: string } }) {
-  const vehicle = await getVehicle(params.id)
+export default async function RentPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const vehicle = await getVehicle(id)
   const customerId = await getCustomerId()
 
   if (!vehicle) {
