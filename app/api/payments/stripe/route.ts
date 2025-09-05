@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-})
+function getStripeInstance() {
+  const secretKey = process.env.STRIPE_SECRET_KEY
+  if (!secretKey) {
+    throw new Error('STRIPE_SECRET_KEY is not configured')
+  }
+  return new Stripe(secretKey, {
+    apiVersion: '2025-08-27.basil',
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const stripe = getStripeInstance()
     const { amount, currency = 'usd', vehicleId, mode, vehicleName, usePaymentIntent = false } = await request.json()
 
     if (!amount || !vehicleId) {
