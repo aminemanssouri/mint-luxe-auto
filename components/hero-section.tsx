@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronDown, Search, Car, Bike, Ship, MapPin, Calendar, Filter, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { LoadingButton } from "@/components/ui/loading-button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
@@ -26,6 +27,9 @@ export default function HeroSection() {
   const [selectedYear, setSelectedYear] = useState("")
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [showVideo, setShowVideo] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [exploreLoading, setExploreLoading] = useState(false)
+  const [bookingLoading, setBookingLoading] = useState(false)
 
   useEffect(() => {
     const start = () => {
@@ -49,19 +53,27 @@ export default function HeroSection() {
     }
   }
 
-  const handleSearch = () => {
-    // Build search parameters
-    const params = new URLSearchParams()
+  const handleSearch = async () => {
+    setSearchLoading(true)
+    try {
+      // Build search parameters
+      const params = new URLSearchParams()
 
-    if (vehicleType !== "car") params.set("type", vehicleType)
-    if (searchQuery) params.set("search", searchQuery)
-    if (selectedBrand) params.set("brand", selectedBrand)
-    if (selectedLocation) params.set("location", selectedLocation)
-    if (selectedPriceRange) params.set("price", selectedPriceRange)
-    if (selectedYear) params.set("year", selectedYear)
+      if (vehicleType !== "car") params.set("type", vehicleType)
+      if (searchQuery) params.set("search", searchQuery)
+      if (selectedBrand) params.set("brand", selectedBrand)
+      if (selectedLocation) params.set("location", selectedLocation)
+      if (selectedPriceRange) params.set("price", selectedPriceRange)
+      if (selectedYear) params.set("year", selectedYear)
 
-    // Navigate to collection page with filters
-    window.location.href = `/collection?${params.toString()}`
+      // Simulate search delay
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Navigate to collection page with filters
+      window.location.href = `/collection?${params.toString()}`
+    } finally {
+      setSearchLoading(false)
+    }
   }
 
   const clearFilters = () => {
@@ -224,13 +236,16 @@ export default function HeroSection() {
                     </Select>
 
                     {/* Search Button */}
-                    <Button
+                    <LoadingButton
                       onClick={handleSearch}
+                      loading={searchLoading}
+                      loadingText="Searching..."
+                      loadingDelay={300}
                       className="bg-gold hover:bg-gold/90 text-black font-medium border-gold w-full md:w-auto"
                     >
                       <Search className={`h-4 w-4 ${isRTL ? "ml-2" : "mr-2"}`} />
                       <span className="font-semibold">Search</span>
-                    </Button>
+                    </LoadingButton>
                   </div>
 
                   {/* Advanced Filters Toggle */}
@@ -362,19 +377,33 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 1.0 }}
               className="mt-8 flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0 justify-center"
             >
-              <Button
+              <LoadingButton
                 variant="outline"
                 className="border-white/30 text-white hover:bg-white/10 hover:text-white bg-transparent px-5 py-3 sm:px-8 sm:py-6 font-medium"
-                onClick={() => (window.location.href = "/collection")}
+                onClick={async () => {
+                  setExploreLoading(true)
+                  await new Promise(resolve => setTimeout(resolve, 600))
+                  window.location.href = "/collection"
+                }}
+                loading={exploreLoading}
+                loadingText="Loading..."
+                loadingDelay={200}
               >
                 <span className="font-semibold">{t.home.exploreCollection}</span>
-              </Button>
-              <Button
+              </LoadingButton>
+              <LoadingButton
                 className="bg-gold hover:bg-gold/90 text-black font-medium px-5 py-3 sm:px-8 sm:py-6 border-gold"
-                onClick={() => (window.location.href = "/services/booking")}
+                onClick={async () => {
+                  setBookingLoading(true)
+                  await new Promise(resolve => setTimeout(resolve, 600))
+                  window.location.href = "/services/booking"
+                }}
+                loading={bookingLoading}
+                loadingText="Loading..."
+                loadingDelay={200}
               >
                 <span className="font-semibold text-black">{t.home.bookTestDrive}</span>
-              </Button>
+              </LoadingButton>
             </motion.div>
           </motion.div>
         </div>

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { LoadingButton } from "@/components/ui/loading-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -12,7 +12,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import LanguageSwitcher from "@/components/language-switcher"
-import LoadingSpinner from "@/components/loading-spinner"
 import { Calendar, Clock, Video, MapPin, DollarSign, User, Mail, Phone, ArrowLeft } from "lucide-react"
 
 function formatMoney(n: number) {
@@ -35,6 +34,8 @@ export default function PrivateAppointmentPage() {
     message: ""
   })
   const [booking, setBooking] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const appointmentPrice = appointmentType === "online" ? 30 : 50
 
@@ -44,23 +45,53 @@ export default function PrivateAppointmentPage() {
 
   const handleBookAppointment = async () => {
     setBooking(true)
+    setError(null)
+    
     try {
-      // Simulate booking process
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Redirect to checkout with appointment details
-      const params = new URLSearchParams({
-        type: "appointment",
-        appointmentType,
-        amount: appointmentPrice.toString(),
-        name: formData.name,
-        date: formData.date,
-        time: formData.time
+      // Create appointment in database
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          appointmentType,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          date: formData.date,
+          time: formData.time,
+          message: formData.message
+        })
       })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to book appointment')
+      }
+
+      // Show success message briefly
+      setSuccess(true)
       
-      router.push(`/checkout/appointment?${params.toString()}`)
+      // Redirect to checkout with appointment details after short delay
+      setTimeout(() => {
+        const params = new URLSearchParams({
+          type: "appointment",
+          appointmentId: data.appointment.id,
+          appointmentType,
+          amount: appointmentPrice.toString(),
+          name: formData.name,
+          date: formData.date,
+          time: formData.time
+        })
+        
+        router.push(`/checkout/appointment?${params.toString()}`)
+      }, 1500)
+      
     } catch (error) {
       console.error("Booking failed:", error)
+      setError(error instanceof Error ? error.message : 'Failed to book appointment')
     } finally {
       setBooking(false)
     }
@@ -231,6 +262,24 @@ export default function PrivateAppointmentPage() {
                   />
                 </div>
 
+                {error && (
+                  <Alert className="bg-red-900/20 border-red-800">
+                    <AlertTitle className="text-red-400">Booking Error</AlertTitle>
+                    <AlertDescription className="text-red-300">
+                      {error}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {success && (
+                  <Alert className="bg-green-900/20 border-green-800">
+                    <AlertTitle className="text-green-400">Success!</AlertTitle>
+                    <AlertDescription className="text-green-300">
+                      Appointment booked successfully. Redirecting to payment...
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <Alert className="bg-zinc-900/60 border-zinc-800">
                   <Clock className="h-4 w-4" />
                   <AlertTitle>Appointment Duration</AlertTitle>
@@ -304,20 +353,16 @@ export default function PrivateAppointmentPage() {
                     </span>
                   </div>
 
-                  <Button
+                  <LoadingButton
                     className="w-full bg-gold text-black hover:bg-gold/90"
                     onClick={handleBookAppointment}
-                    disabled={!isFormValid || booking}
+                    loading={booking}
+                    loadingText="Booking appointment..."
+                    loadingDelay={400}
+                    disabled={!isFormValid}
                   >
-                    {booking ? (
-                      <div className="flex items-center gap-2">
-                        <LoadingSpinner size="sm" className="text-black" />
-                        <span>Booking...</span>
-                      </div>
-                    ) : (
-                      `Book Appointment - ${formatMoney(appointmentPrice)}`
-                    )}
-                  </Button>
+                    Book Appointment - {formatMoney(appointmentPrice)}
+                  </LoadingButton>
 
                   <p className="text-white/60 text-xs mt-3 text-center">
                     Payment will be processed securely. You'll receive confirmation details via email.

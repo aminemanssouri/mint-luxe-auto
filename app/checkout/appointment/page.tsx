@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { LoadingButton } from "@/components/ui/loading-button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import LoadingSpinner from "@/components/loading-spinner"
 import { CreditCard, ShieldCheck, Bitcoin, Calendar, Clock, Video, MapPin, User } from "lucide-react"
 
 function formatMoney(n: number) {
@@ -23,12 +22,32 @@ export default function AppointmentCheckoutPage() {
   const searchParams = useSearchParams()
   
   const [appointmentDetails, setAppointmentDetails] = useState({
-    type: searchParams.get("appointmentType") || "online",
-    amount: Number(searchParams.get("amount")) || 30,
-    name: searchParams.get("name") || "",
-    date: searchParams.get("date") || "",
-    time: searchParams.get("time") || ""
+    id: null as string | null,
+    type: "online",
+    amount: 30,
+    name: "",
+    date: "",
+    time: ""
   })
+  
+  // Update appointment details from URL params after hydration
+  useEffect(() => {
+    const appointmentId = searchParams.get("appointmentId")
+    const appointmentType = searchParams.get("appointmentType")
+    const amount = searchParams.get("amount")
+    const name = searchParams.get("name")
+    const date = searchParams.get("date")
+    const time = searchParams.get("time")
+    
+    setAppointmentDetails({
+      id: appointmentId,
+      type: appointmentType || "online",
+      amount: Number(amount) || 30,
+      name: name || "",
+      date: date || "",
+      time: time || ""
+    })
+  }, [searchParams])
   
   const [paymentMethod, setPaymentMethod] = useState<"stripe" | "coinbase">("stripe")
   const [processing, setProcessing] = useState(false)
@@ -41,21 +60,35 @@ export default function AppointmentCheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: appointmentDetails.amount,
-          appointmentType: appointmentDetails.type,
-          appointmentDate: appointmentDetails.date,
-          appointmentTime: appointmentDetails.time,
-          customerName: appointmentDetails.name,
+          vehicleId: appointmentDetails.id || 'appointment',
+          vehicleName: `${appointmentDetails.type} Appointment`,
+          mode: 'full',
+          currency: 'usd'
         }),
       })
       
-      const { clientSecret } = await response.json()
+      const data = await response.json()
       
-      if (clientSecret) {
-        console.log('Appointment payment initiated:', clientSecret)
-        router.push('/checkout/success?type=appointment')
+      if (data.error) {
+        alert('Payment failed: ' + data.error)
+      } else if (data.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url
+      } else if (data.clientSecret) {
+        // Handle Payment Intent - redirect to payment form page
+        const params = new URLSearchParams({
+          clientSecret: data.clientSecret,
+          amount: appointmentDetails.amount.toString(),
+          appointmentId: appointmentDetails.id || 'appointment',
+          mode: 'full',
+          appointmentType: appointmentDetails.type,
+          customerName: appointmentDetails.name
+        })
+        window.location.href = `/checkout/payment-form?${params.toString()}`
       }
     } catch (error) {
       console.error('Stripe payment failed:', error)
+      alert('Payment failed. Please try again.')
     } finally {
       setProcessing(false)
     }
@@ -69,32 +102,26 @@ export default function AppointmentCheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: appointmentDetails.amount,
-          appointmentType: appointmentDetails.type,
-          appointmentDate: appointmentDetails.date,
-          appointmentTime: appointmentDetails.time,
-          customerName: appointmentDetails.name,
+          vehicleId: appointmentDetails.id || 'appointment',
+          mode: 'full',
+          currency: 'USD'
         }),
       })
       
       const data = await response.json()
+      
       if (data.error) {
         alert('Payment failed: ' + data.error)
+      } else if (data.hostedUrl) {
+        // Redirect to Coinbase Commerce hosted checkout
+        window.location.href = data.hostedUrl
       } else if (data.url) {
-        // Redirect to Coinbase Checkout
+        // Alternative redirect URL
         window.location.href = data.url
-      } else if (data.clientSecret) {
-        // Handle Payment Intent - redirect to payment form page
-        const params = new URLSearchParams({
-          clientSecret: data.clientSecret,
-          amount: appointmentDetails.amount.toString(),
-          vehicleId: 'appointment',
-          mode: 'full',
-          vehicleName: 'Service Appointment'
-        })
-        window.location.href = `/checkout/payment-form?${params.toString()}`
       }
     } catch (error) {
       console.error('Coinbase payment failed:', error)
+      alert('Payment failed. Please try again.')
     } finally {
       setProcessing(false)
     }
@@ -139,20 +166,15 @@ export default function AppointmentCheckoutPage() {
                       <AlertTitle>Secure checkout</AlertTitle>
                       <AlertDescription>Your payment is protected by Stripe. We do not store card details.</AlertDescription>
                     </Alert>
-                    <Button 
+                    <LoadingButton 
                       className="w-full bg-gold text-black hover:bg-gold/90" 
                       onClick={handleStripePayment}
-                      disabled={processing}
+                      loading={processing}
+                      loadingText="Processing payment..."
+                      loadingDelay={300}
                     >
-                      {processing ? (
-                        <div className="flex items-center gap-2">
-                          <LoadingSpinner size="sm" className="text-black" />
-                          <span>Processing...</span>
-                        </div>
-                      ) : (
-                        `Pay ${formatMoney(appointmentDetails.amount)} with Card`
-                      )}
-                    </Button>
+                      Pay {formatMoney(appointmentDetails.amount)} with Card
+                    </LoadingButton>
                   </div>
                 </TabsContent>
 
@@ -176,13 +198,15 @@ export default function AppointmentCheckoutPage() {
                       <AlertTitle>Secure crypto payment</AlertTitle>
                       <AlertDescription>Powered by Coinbase Commerce. You'll be redirected to complete your payment.</AlertDescription>
                     </Alert>
-                    <Button 
+                    <LoadingButton 
                       className="w-full mt-4 bg-gold text-black hover:bg-gold/90" 
                       onClick={handleCoinbasePayment}
-                      disabled={processing}
+                      loading={processing}
+                      loadingText="Processing payment..."
+                      loadingDelay={300}
                     >
-                      {processing ? "Processing..." : `Pay ${formatMoney(appointmentDetails.amount)} with Crypto`}
-                    </Button>
+                      Pay {formatMoney(appointmentDetails.amount)} with Crypto
+                    </LoadingButton>
                   </div>
                 </TabsContent>
               </Tabs>

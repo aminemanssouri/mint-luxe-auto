@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { LoadingButton } from "@/components/ui/loading-button"
+import { PageLoading } from "@/components/ui/page-loading"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, CreditCard, ShieldCheck } from "lucide-react"
 import Link from "next/link"
@@ -150,13 +151,15 @@ function PaymentForm() {
               </Alert>
             )}
 
-            <Button
+            <LoadingButton
               type="submit"
-              disabled={!stripe || processing}
+              loading={processing}
+              loadingText="Processing payment..."
+              loadingDelay={300}
               className="w-full bg-gold hover:bg-gold/90 text-black font-semibold"
             >
-              {processing ? "Processing..." : `Pay $${Number(amount).toFixed(2)}`}
-            </Button>
+              Pay ${Number(amount).toFixed(2)}
+            </LoadingButton>
           </form>
 
           <div className="mt-4 text-center text-xs text-white/60">

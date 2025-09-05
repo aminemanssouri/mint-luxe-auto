@@ -4,14 +4,14 @@ import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { LoadingButton } from "@/components/ui/loading-button"
+import { PageLoading } from "@/components/ui/page-loading"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import LoadingSpinner from "@/components/loading-spinner"
 import { CreditCard, ShieldCheck, Bitcoin, Car, Calendar, DollarSign } from "lucide-react"
 
 function formatMoney(n: number) {
@@ -119,7 +119,7 @@ export default function VehicleCheckoutPage() {
     }
   }
 
-  if (loading) return <div className="container mx-auto px-4 py-10 text-white">Loading...</div>
+  if (loading) return <PageLoading isLoading={true} text="Loading vehicle details..." />
   if (!vehicle) return <div className="container mx-auto px-4 py-10 text-white">Vehicle not found.</div>
 
   return (
@@ -153,20 +153,15 @@ export default function VehicleCheckoutPage() {
                     <AlertTitle>Secure checkout</AlertTitle>
                     <AlertDescription>You'll be redirected to Stripe's secure checkout page to complete your payment.</AlertDescription>
                   </Alert>
-                  <Button 
+                  <LoadingButton 
                     className="w-full bg-gold text-black hover:bg-gold/90" 
                     onClick={handleStripePayment}
-                    disabled={processing}
+                    loading={processing}
+                    loadingText="Redirecting to Stripe..."
+                    loadingDelay={500}
                   >
-                    {processing ? (
-                      <div className="flex items-center gap-2">
-                        <LoadingSpinner size="sm" className="text-black" />
-                        <span>Redirecting...</span>
-                      </div>
-                    ) : (
-                      `Pay ${formatMoney(amount)} with Card`
-                    )}
-                  </Button>
+                    Pay {formatMoney(amount)} with Card
+                  </LoadingButton>
                 </TabsContent>
 
                 <TabsContent value="coinbase" className="mt-6">
@@ -189,13 +184,15 @@ export default function VehicleCheckoutPage() {
                       <AlertTitle>Secure crypto payment</AlertTitle>
                       <AlertDescription>Powered by Coinbase Commerce. You'll be redirected to complete your payment.</AlertDescription>
                     </Alert>
-                    <Button 
+                    <LoadingButton 
                       className="w-full mt-4 bg-gold text-black hover:bg-gold/90" 
                       onClick={handleCoinbasePayment}
-                      disabled={processing}
+                      loading={processing}
+                      loadingText="Redirecting to Coinbase..."
+                      loadingDelay={500}
                     >
-                      {processing ? "Processing..." : `Pay ${formatMoney(amount)} with Crypto`}
-                    </Button>
+                      Pay {formatMoney(amount)} with Crypto
+                    </LoadingButton>
                   </div>
                 </TabsContent>
               </Tabs>

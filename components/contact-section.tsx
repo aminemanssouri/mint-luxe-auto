@@ -1,8 +1,8 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { motion, useInView } from "framer-motion"
-import { Button } from "@/components/ui/button"
+import { LoadingButton } from "@/components/ui/loading-button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Phone, Mail, MapPin } from "lucide-react"
@@ -85,7 +85,19 @@ export default function ContactSection() {
                   className="border-zinc-700 bg-zinc-800/50 text-white placeholder:text-zinc-500"
                 />
               </div>
-              <Button className="w-full bg-gold hover:bg-gold/90 text-black">{t.carDetails.sendMessage}</Button>
+              <LoadingButton 
+                className="w-full bg-gold hover:bg-gold/90 text-black"
+                onClick={async () => {
+                  // Simulate form submission
+                  await new Promise(resolve => setTimeout(resolve, 1500))
+                  alert('Message sent successfully!')
+                }}
+                loading={false}
+                loadingText="Sending message..."
+                loadingDelay={300}
+              >
+                {t.carDetails.sendMessage}
+              </LoadingButton>
             </form>
           </motion.div>
 
@@ -133,9 +145,19 @@ export default function ContactSection() {
               <p className="mb-4 text-white/70">
                 Schedule a private viewing of our exclusive collection with our luxury automotive specialists.
               </p>
-              <Button variant="outline" className="border-gold text-gold hover:bg-gold/10">
+              <LoadingButton 
+                variant="outline" 
+                className="border-gold text-gold hover:bg-gold/10"
+                onClick={async () => {
+                  await new Promise(resolve => setTimeout(resolve, 800))
+                  window.location.href = '/appointment'
+                }}
+                loading={false}
+                loadingText="Loading..."
+                loadingDelay={200}
+              >
                 Book Private Appointment
-              </Button>
+              </LoadingButton>
             </div>
           </motion.div>
         </div>
