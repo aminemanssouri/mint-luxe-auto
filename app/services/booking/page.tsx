@@ -92,7 +92,7 @@ export default function BookingPage() {
   useEffect(() => {
     // Check auth on mount
     const supabase = createSupabaseBrowserClient()
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: any) => {
       setUser(data.user || null)
       setAuthChecked(true)
     })

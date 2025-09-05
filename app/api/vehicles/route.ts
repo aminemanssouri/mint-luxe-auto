@@ -194,7 +194,7 @@ export async function GET(request: Request) {
     // 3) Merge to UI list items (keep specs minimal for performance)
     const items = base.map((v: any) => {
       const gallery = (imagesBy[v.id] || []).slice().sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0))
-      const image = gallery[0]?.image_url || '/placeholder.svg?height=300&width=500'
+      const image = (gallery[0] as any)?.image_url || '/placeholder.svg?height=300&width=500'
       // Omit expensive specs merging on list for speed
       const specsSummary = ''
 

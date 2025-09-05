@@ -41,7 +41,7 @@ export default function Navbar() {
   // Fetch auth user on mount
   useEffect(() => {
     const supabase = createBrowserSupabase()
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: any) => {
       const email = data.user?.email ?? null
       setUserEmail(email)
       if (email) {

@@ -29,8 +29,8 @@ export async function GET(request: Request) {
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 })
 
     const reservedDates = (data || [])
-      .filter((b) => b.preferred_date && b.status !== "cancelled")
-      .map((b) => b.preferred_date)
+      .filter((b: any) => b.preferred_date && b.status !== "cancelled")
+      .map((b: any) => b.preferred_date)
 
     return NextResponse.json({ ok: true, reservedDates })
   } catch (e: any) {

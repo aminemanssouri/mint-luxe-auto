@@ -31,7 +31,7 @@ export default function ServicesSection() {
     let active = true
     // auth state
     const supabase = createSupabaseBrowserClient()
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: any) => {
       if (!active) return
       setUser(data.user || null)
       setAuthChecked(true)
