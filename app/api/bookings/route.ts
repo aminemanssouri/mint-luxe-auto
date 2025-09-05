@@ -176,7 +176,7 @@ export async function GET() {
 
     // Add service bookings
     if (serviceBookings.data) {
-      serviceBookings.data.forEach(booking => {
+      serviceBookings.data.forEach((booking: any) => {
         allBookings.push({
           ...booking,
           type: 'service_booking',
@@ -189,7 +189,7 @@ export async function GET() {
 
     // Add vehicle reservations
     if (vehicleReservations.data) {
-      vehicleReservations.data.forEach(reservation => {
+      vehicleReservations.data.forEach((reservation: any) => {
         allBookings.push({
           ...reservation,
           type: 'vehicle_reservation',
@@ -203,7 +203,7 @@ export async function GET() {
 
     // Add rental agreements
     if (rentalAgreements.data) {
-      rentalAgreements.data.forEach(agreement => {
+      rentalAgreements.data.forEach((agreement: any) => {
         allBookings.push({
           ...agreement,
           type: 'rental_agreement',
@@ -216,7 +216,7 @@ export async function GET() {
 
     // Add purchase agreements
     if (purchaseAgreements.data) {
-      purchaseAgreements.data.forEach(agreement => {
+      purchaseAgreements.data.forEach((agreement: any) => {
         allBookings.push({
           ...agreement,
           type: 'purchase_agreement',
@@ -229,7 +229,7 @@ export async function GET() {
 
     // Add appointments
     if (appointments.data) {
-      appointments.data.forEach(appointment => {
+      appointments.data.forEach((appointment: any) => {
         allBookings.push({
           ...appointment,
           type: 'appointment',
