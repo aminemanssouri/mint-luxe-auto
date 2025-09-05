@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoadingButton } from "@/components/ui/loading-button"
@@ -17,7 +17,7 @@ function formatMoney(n: number) {
   }).format(n)
 }
 
-export default function AppointmentCheckoutPage() {
+function AppointmentCheckoutContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -283,5 +283,21 @@ export default function AppointmentCheckoutPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AppointmentCheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black pb-20">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-white">Loading...</div>
+          </div>
+        </div>
+      </div>
+    }>
+      <AppointmentCheckoutContent />
+    </Suspense>
   )
 }

@@ -11,17 +11,18 @@ export const metadata: Metadata = {
   title: "Collection",
 }
 
-export default async function CollectionPage({ searchParams }: { searchParams: SearchParams }) {
-  const type = (searchParams.type as string) || "all"
-  const brand = (searchParams.brand as string) || "all"
-  const category = (searchParams.category as string) || "all"
-  const location = (searchParams.location as string) || "all"
-  const year = (searchParams.year as string) || "all"
-  const search = (searchParams.search as string) || ""
-  const sort = (searchParams.sort as string) || "featured"
-  const price = (searchParams.price as string) || "all"
-  const page = Number(searchParams.page ?? 1) || 1
-  const pageSize = Number(searchParams.pageSize ?? 12) || 12
+export default async function CollectionPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const resolvedSearchParams = await searchParams
+  const type = (resolvedSearchParams.type as string) || "all"
+  const brand = (resolvedSearchParams.brand as string) || "all"
+  const category = (resolvedSearchParams.category as string) || "all"
+  const location = (resolvedSearchParams.location as string) || "all"
+  const year = (resolvedSearchParams.year as string) || "all"
+  const search = (resolvedSearchParams.search as string) || ""
+  const sort = (resolvedSearchParams.sort as string) || "featured"
+  const price = (resolvedSearchParams.price as string) || "all"
+  const page = Number(resolvedSearchParams.page ?? 1) || 1
+  const pageSize = Number(resolvedSearchParams.pageSize ?? 12) || 12
 
   const params = new URLSearchParams()
   if (type !== "all") params.set("type", type)

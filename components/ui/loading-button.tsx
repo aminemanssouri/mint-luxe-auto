@@ -26,7 +26,7 @@ const LoadingButton = React.forwardRef<HTMLButtonElement, LoadingButtonProps>(
   }, ref) => {
     const [showLoading, setShowLoading] = React.useState(false)
     const [isClicked, setIsClicked] = React.useState(false)
-    const timeoutRef = React.useRef<NodeJS.Timeout>()
+    const timeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
     React.useEffect(() => {
       if (loading) {
