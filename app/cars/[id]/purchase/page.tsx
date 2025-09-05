@@ -59,8 +59,9 @@ async function getAvailableTradeInVehicles(): Promise<any[]> {
   return vehicles || []
 }
 
-export default async function PurchasePage({ params }: { params: { id: string } }) {
-  const vehicle = await getVehicle(params.id)
+export default async function PurchasePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const vehicle = await getVehicle(id)
   const customerId = await getCustomerId()
   const tradeInVehicles = await getAvailableTradeInVehicles()
 
