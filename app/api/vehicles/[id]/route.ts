@@ -12,12 +12,25 @@ export async function GET(_req: Request, context: { params: Promise<{ id: string
 
     const supabase = await createClient()
 
-    // Base vehicle
-    const { data: vehicle, error: vErr } = await supabase
+    // Base vehicle (attempt to fetch optional columns latitude/longitude/brand/category, with fallback)
+    let vehicle: any = null
+    let vErr: any = null
+    // Primary query with optional columns
+    let res = await supabase
       .from('vehicles')
-      .select('id, name, vehicle_type, price, year, is_featured, location, description')
+      .select('id, name, brand, category, vehicle_type, price, year, is_featured, location, latitude, longitude, description')
       .eq('id', id)
       .single()
+    if (res.error && (res.error.code === '42703' || /column .* (brand|category|latitude|longitude)/i.test(res.error.message || ''))) {
+      // Fallback without optional columns if they don't exist
+      res = await supabase
+        .from('vehicles')
+        .select('id, name, vehicle_type, price, year, is_featured, location, description')
+        .eq('id', id)
+        .single()
+    }
+    vehicle = res.data
+    vErr = res.error
 
     if (vErr) {
       return NextResponse.json({ ok: false, error: vErr.message }, { status: 404 })
@@ -64,14 +77,16 @@ export async function GET(_req: Request, context: { params: Promise<{ id: string
     const result = {
       id: vehicle.id,
       name: vehicle.name,
-      brand: vehicle.name?.split(' ')[0] ?? 'Brand', // replace with real brand column if present
+      brand: (vehicle as any).brand ?? (vehicle.name?.split(' ')[0] ?? 'Brand'),
       type: vehicle.vehicle_type,
       price: Number(vehicle.price) || 0,
       year: vehicle.year,
-      category: 'Luxury', // replace with real category column if present
+      category: (vehicle as any).category ?? 'Luxury',
       image: primaryImage,
       specs: specsSummary,
       location: vehicle.location ?? 'Unknown',
+      latitude: (vehicle as any).latitude ?? null,
+      longitude: (vehicle as any).longitude ?? null,
       featured: Boolean(vehicle.is_featured),
       description: vehicle.description,
       images,

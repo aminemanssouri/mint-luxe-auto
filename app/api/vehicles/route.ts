@@ -201,14 +201,14 @@ export async function GET(request: Request) {
       return {
         id: v.id,
         name: v.name,
-        brand: v.brand ?? 'Unknown',
+        brand: v.brand ?? (typeof v.name === 'string' ? (v.name.split(' ')[0] || 'Unknown') : 'Unknown'),
         type: v.vehicle_type,
         price: Number(v.price) || 0,
         year: v.year,
-        category: v.category ?? 'Unknown',
+        category: v.category ?? (typeof v.vehicle_type === 'string' ? (v.vehicle_type.charAt(0).toUpperCase() + v.vehicle_type.slice(1)) : 'Luxury'),
         image,
         specs: specsSummary,
-        location: v.location ?? 'Unknown',
+        location: v.location ?? '',
         featured: Boolean(v.is_featured),
       }
     })

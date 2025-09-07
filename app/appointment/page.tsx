@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,7 +12,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import LanguageSwitcher from "@/components/language-switcher"
-import { Calendar, Clock, Video, MapPin, DollarSign, User, Mail, Phone, ArrowLeft } from "lucide-react"
+import { Calendar, Clock, Video, MapPin, DollarSign, User, Mail, Phone, ArrowLeft, CheckCircle, XCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { motion } from "framer-motion"
+import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client"
 
 function formatMoney(n: number) {
   if (!Number.isFinite(n)) return "$0"
@@ -24,6 +27,8 @@ function formatMoney(n: number) {
 
 export default function PrivateAppointmentPage() {
   const router = useRouter()
+  const [authChecked, setAuthChecked] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const [appointmentType, setAppointmentType] = useState<"online" | "physical">("online")
   const [formData, setFormData] = useState({
     name: "",
@@ -36,8 +41,34 @@ export default function PrivateAppointmentPage() {
   const [booking, setBooking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalType, setModalType] = useState<"success" | "error" | null>(null)
+  const [modalText, setModalText] = useState<string>("")
 
   const appointmentPrice = appointmentType === "online" ? 30 : 50
+
+  // Auth guard (client-side)
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user || null)
+      setAuthChecked(true)
+      if (!data.user) {
+        router.replace(`/auth/login?next=${encodeURIComponent('/appointment')}`)
+      }
+    })
+  }, [router])
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-white/80">
+        Checking authentication...
+      </div>
+    )
+  }
+  if (authChecked && !user) {
+    return null
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -73,6 +104,9 @@ export default function PrivateAppointmentPage() {
 
       // Show success message briefly
       setSuccess(true)
+      setModalType('success')
+      setModalText('Appointment booked successfully. Redirecting to payment...')
+      setModalOpen(true)
       
       // Redirect to checkout with appointment details after short delay
       setTimeout(() => {
@@ -91,7 +125,11 @@ export default function PrivateAppointmentPage() {
       
     } catch (error) {
       console.error("Booking failed:", error)
-      setError(error instanceof Error ? error.message : 'Failed to book appointment')
+      const msg = error instanceof Error ? error.message : 'Failed to book appointment'
+      setError(msg)
+      setModalType('error')
+      setModalText(msg)
+      setModalOpen(true)
     } finally {
       setBooking(false)
     }
@@ -271,14 +309,7 @@ export default function PrivateAppointmentPage() {
                   </Alert>
                 )}
 
-                {success && (
-                  <Alert className="bg-green-900/20 border-green-800">
-                    <AlertTitle className="text-green-400">Success!</AlertTitle>
-                    <AlertDescription className="text-green-300">
-                      Appointment booked successfully. Redirecting to payment...
-                    </AlertDescription>
-                  </Alert>
-                )}
+                {/* Success alert removed in favor of animated modal */}
 
                 <Alert className="bg-zinc-900/60 border-zinc-800">
                   <Clock className="h-4 w-4" />
@@ -373,6 +404,28 @@ export default function PrivateAppointmentPage() {
           </div>
         </div>
       </div>
+
+      {/* Animated result modal */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="bg-zinc-900/90 border-zinc-800 text-white">
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="text-center space-y-3"
+          >
+            {modalType === 'success' ? (
+              <CheckCircle className="h-12 w-12 mx-auto text-green-400" />
+            ) : (
+              <XCircle className="h-12 w-12 mx-auto text-red-400" />
+            )}
+            <DialogHeader>
+              <DialogTitle>{modalType === 'success' ? 'Appointment Booked' : 'Booking Failed'}</DialogTitle>
+              <DialogDescription className="text-white/70">{modalText}</DialogDescription>
+            </DialogHeader>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

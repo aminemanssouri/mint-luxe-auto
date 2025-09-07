@@ -40,6 +40,8 @@ export default function CarDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [item, setItem] = useState<any | null>(null)
+  const [similarLoading, setSimilarLoading] = useState(true)
+  const [similarItems, setSimilarItems] = useState<any[]>([])
   const { t, isRTL } = useLanguage()
 
   // Load detail from API
@@ -123,12 +125,56 @@ export default function CarDetailsPage() {
       images: images.length ? images : [PLACEHOLDER_IMG],
       videoThumbnail: primary,
       videoUrl: "#",
+      latitude: (item as any).latitude ?? null,
+      longitude: (item as any).longitude ?? null,
       owner: {
         name: ownerName || "",
         response: ownerResponse || "",
         rating: 5,
         reviews: 0,
       },
+    }
+  }, [item, id])
+
+  // Load similar vehicles (prefer same brand, then fill with same category)
+  useEffect(() => {
+    let cancelled = false
+    async function loadSimilar() {
+      if (!item) return
+      setSimilarLoading(true)
+      try {
+        const combined: any[] = []
+        // 1) Try same brand
+        if (item.brand) {
+          const p1 = new URLSearchParams({ brand: String(item.brand), limit: '12' })
+          const r1 = await fetch(`/api/vehicles?${p1.toString()}`, { cache: 'no-store' })
+          const j1 = await r1.json()
+          if (j1?.ok) {
+            combined.push(...(j1.items || []).filter((v: any) => v.id !== id))
+          }
+        }
+        // 2) Fill from same category if we need more
+        if (combined.length < 3 && item.category) {
+          const p2 = new URLSearchParams({ category: String(item.category), limit: '12' })
+          const r2 = await fetch(`/api/vehicles?${p2.toString()}`, { cache: 'no-store' })
+          const j2 = await r2.json()
+          if (j2?.ok) {
+            const byId = new Set(combined.map((v) => v.id))
+            const more = (j2.items || []).filter((v: any) => v.id !== id && !byId.has(v.id))
+            combined.push(...more)
+          }
+        }
+        if (cancelled) return
+        setSimilarItems(combined.slice(0, 3))
+      } catch {
+        if (!cancelled) setSimilarItems([])
+      } finally {
+        if (!cancelled) setSimilarLoading(false)
+      }
+    }
+    loadSimilar()
+    return () => {
+      cancelled = true
     }
   }, [item, id])
 
@@ -453,12 +499,16 @@ export default function CarDetailsPage() {
                   <h3 className="mb-4 text-xl font-bold text-white">{t.common.location}</h3>
                   <p className="mb-4 text-white/80">{carData.location}</p>
                   <div className="aspect-[4/3] w-full overflow-hidden rounded-lg bg-zinc-800">
-                    <Image
-                      src="/placeholder.svg?height=300&width=400"
-                      alt="Map location"
-                      width={400}
-                      height={300}
-                      className="h-full w-full object-cover"
+                    <iframe
+                      src={
+                        carData.latitude != null && carData.longitude != null
+                          ? `https://www.google.com/maps?q=${carData.latitude},${carData.longitude}&z=12&output=embed`
+                          : `https://www.google.com/maps?q=${encodeURIComponent(carData.location || 'Dubai')}&output=embed`
+                      }
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      className="h-full w-full border-0"
+                      title="Vehicle location map"
                     />
                   </div>
                 </motion.div>
@@ -466,7 +516,7 @@ export default function CarDetailsPage() {
             </div>
           </div>
 
-          {/* Similar Cars */}
+          {/* Similar Vehicles */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -476,29 +526,31 @@ export default function CarDetailsPage() {
           >
             <h2 className="mb-6 text-2xl font-bold text-white">{t.carDetails.similarVehicles}</h2>
             <div className="grid gap-6 md:grid-cols-3">
-              {[1, 2, 3].map((item) => (
+              {similarLoading && [0,1,2].map((s) => (
+                <div key={s} className="h-64 rounded-lg bg-zinc-900/50 border border-zinc-800 animate-pulse" />
+              ))}
+              {!similarLoading && similarItems.length === 0 && (
+                <div className="text-white/60">No similar vehicles found.</div>
+              )}
+              {!similarLoading && similarItems.map((sim) => (
                 <div
-                  key={item}
+                  key={sim.id}
                   className="group overflow-hidden rounded-lg bg-zinc-900/50 transition-all duration-300 hover:bg-zinc-900"
                 >
                   <div className="relative h-48 w-full overflow-hidden">
                     <Image
-                      src={`/placeholder.svg?height=300&width=500`}
-                      alt={`Similar Car ${item}`}
+                      src={sim.image || '/placeholder.svg'}
+                      alt={sim.name}
                       fill
                       className="object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                   </div>
                   <div className="p-4">
-                    <h3 className="font-bold text-white">Luxury Vehicle {item}</h3>
-                    <p className="text-sm text-white/70">Starting from $350,000</p>
-                    <Button
-                      variant="link"
-                      className="mt-2 p-0 text-gold hover:text-gold/80"
-                      onClick={() => (window.location.href = `/cars/similar-${item}`)}
-                    >
+                    <h3 className="font-bold text-white">{sim.name}</h3>
+                    <p className="text-sm text-white/70">{sim.year ? `${sim.year} • ` : ''}{sim.brand || sim.category}</p>
+                    <Link href={`/cars/${sim.id}`} className="mt-2 inline-flex text-gold hover:text-gold/80">
                       {t.common.details}
-                    </Button>
+                    </Link>
                   </div>
                 </div>
               ))}

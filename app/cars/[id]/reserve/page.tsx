@@ -17,6 +17,7 @@ import LoadingSpinner from "@/components/loading-spinner"
 import { CalendarDays, DollarSign, ShieldCheck, CreditCard, ArrowLeft, Phone, Mail } from "lucide-react"
 // Date range popover picker (shadcn style)
 import { DateRangePicker } from "@/components/ui/date-range-picker"
+import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client"
 
 // Minimal vehicle detail shape
 type Contact = { contact_name?: string | null; phone?: string | null; email?: string | null }
@@ -40,6 +41,8 @@ function formatMoney(n: number) {
 export default function ReserveVehiclePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const [authChecked, setAuthChecked] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const [vehicle, setVehicle] = useState<VehicleDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -71,6 +74,30 @@ export default function ReserveVehiclePage() {
   }, [vehicle?.price])
   const rentTotal = useMemo(() => dailyRate * Math.max(0, daysSelected), [dailyRate, daysSelected])
   const deposit25 = useMemo(() => Math.round((vehicle?.price ?? 0) * 0.25), [vehicle?.price])
+
+  // Auth guard
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user || null)
+      setAuthChecked(true)
+      if (!data.user) {
+        const next = `/cars/${id}/reserve`
+        router.replace(`/auth/login?next=${encodeURIComponent(next)}`)
+      }
+    })
+  }, [id, router])
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-white/80">
+        Checking authentication...
+      </div>
+    )
+  }
+  if (authChecked && !user) {
+    return null
+  }
 
   useEffect(() => {
     let active = true

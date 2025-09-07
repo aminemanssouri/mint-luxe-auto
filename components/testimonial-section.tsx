@@ -17,21 +17,21 @@ export default function TestimonialSection() {
       name: t.testimonials.client1Name,
       position: t.testimonials.client1Position,
       quote: t.testimonials.testimonial1,
-      image: "/placeholder.svg?height=80&width=80",
+      image: "https://toppng.com/uploads/preview/see-profile-gentlema-11563886739l6i9igwwuz.png",
     },
     {
       id: 2,
       name: t.testimonials.client2Name,
       position: t.testimonials.client2Position,
       quote: t.testimonials.testimonial2,
-      image: "/placeholder.svg?height=80&width=80",
+      image: "https://www.vhv.rs/dpng/d/495-4958796_looking-for-a-new-haircut-the-best-mens.png",
     },
     {
       id: 3,
       name: t.testimonials.client3Name,
       position: t.testimonials.client3Position,
       quote: t.testimonials.testimonial3,
-      image: "/placeholder.svg?height=80&width=80",
+      image: "https://e7.pngegg.com/pngimages/881/30/png-clipart-woman-s-profile-graphy-black-woman.png",
     },
   ]
 

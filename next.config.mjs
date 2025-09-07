@@ -39,6 +39,21 @@ const nextConfig = {
         hostname: 'www.charles-pozzi.fr',
         pathname: '/wp-content/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'toppng.com',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.vhv.rs',
+        pathname: '/dpng/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.pngegg.com',
+        pathname: '/pngimages/**',
+      },
     ],
   },
   compress: true,

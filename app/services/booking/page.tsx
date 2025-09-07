@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useEffect, useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +20,7 @@ import {
   User,
   MapPin,
   CheckCircle,
+  XCircle,
   Star,
   Shield,
   Truck,
@@ -88,6 +90,21 @@ export default function BookingPage() {
   const [slotsLoading, setSlotsLoading] = useState(false)
   const [slotsError, setSlotsError] = useState<string | null>(null)
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>("")
+  // Modal state for success / failure
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalType, setModalType] = useState<"success" | "error" | null>(null)
+  const [modalText, setModalText] = useState("")
+
+  // Auto-redirect to home 5s after success modal opens
+  useEffect(() => {
+    if (modalOpen && modalType === 'success') {
+      const timer = setTimeout(() => {
+        setModalOpen(false)
+        window.location.href = '/'
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [modalOpen, modalType])
 
   useEffect(() => {
     // Check auth on mount
@@ -218,9 +235,13 @@ export default function BookingPage() {
       })
       const json = await res.json()
       if (!json?.ok) throw new Error(json?.error || "Failed to create booking")
-      alert("Booking submitted successfully!")
+      setModalType('success')
+      setModalText('Booking submitted successfully!')
+      setModalOpen(true)
     } catch (err: any) {
-      alert(err?.message || "Failed to submit booking")
+      setModalType('error')
+      setModalText(err?.message || 'Failed to submit booking')
+      setModalOpen(true)
     }
   }
 
@@ -902,6 +923,28 @@ export default function BookingPage() {
           )}
         </div>
       </div>
+
+      {/* Animated result modal */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="bg-zinc-900/90 border-zinc-800 text-white">
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="text-center space-y-3"
+          >
+            {modalType === 'success' ? (
+              <CheckCircle className="h-12 w-12 mx-auto text-green-400" />
+            ) : (
+              <XCircle className="h-12 w-12 mx-auto text-red-400" />
+            )}
+            <DialogHeader>
+              <DialogTitle>{modalType === 'success' ? 'Booking Submitted' : 'Booking Failed'}</DialogTitle>
+              <DialogDescription className="text-white/70">{modalText}</DialogDescription>
+            </DialogHeader>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
