@@ -206,6 +206,32 @@ export default function CollectionClient({
     setPage(1)
   }, [selectedType, selectedBrand, selectedCategory, selectedLocation, selectedYear, debouncedSearch, priceRange, sortBy])
 
+  // Safe image rendering for external hosts not configured in next.config
+  const allowedHostPatterns: RegExp[] = [
+    /^logo\.clearbit\.com$/,
+    /^example\.com$/,
+    /(^|\.)scene7\.com$/,
+    /^azimutyachts\.com$/,
+    /(^|\.)wandaloo\.com$/,
+    /(^|\.)hearstapps\.com$/,
+    /^www\.charles-pozzi\.fr$/,
+    /^toppng\.com$/,
+    /^www\.vhv\.rs$/,
+    /(^|\.)pngegg\.com$/,
+  ]
+
+  const isAllowedHost = (url: string) => {
+    try {
+      const u = new URL(url)
+      const host = u.hostname
+      return allowedHostPatterns.some((re) => re.test(host))
+    } catch {
+      return false
+    }
+  }
+
+  const isHttpUrl = (url: string) => /^https?:\/\//i.test(url)
+
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
@@ -463,12 +489,21 @@ export default function CollectionClient({
                     <Card className="group overflow-hidden bg-zinc-900/50 border-zinc-800 transition-all duration-300 hover:bg-zinc-900 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10">
                       <div className="relative">
                         <div className="relative h-48 w-full overflow-hidden">
-                          <Image
-                            src={vehicle.image || "/placeholder.svg"}
-                            alt={vehicle.name}
-                            fill
-                            className="object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
+                          {vehicle.image && isHttpUrl(vehicle.image) && !isAllowedHost(vehicle.image) ? (
+                            <img
+                              src={vehicle.image}
+                              alt={vehicle.name}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <Image
+                              src={vehicle.image || "/placeholder.svg"}
+                              alt={vehicle.name}
+                              fill
+                              className="object-cover transition-transform duration-700 group-hover:scale-105"
+                            />
+                          )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                         </div>
 

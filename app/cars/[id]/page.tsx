@@ -208,6 +208,32 @@ export default function CarDetailsPage() {
   const headerScale = useTransform(scrollYProgress, [0, 0.1], [1, 0.95])
   const contentOpacity = useTransform(scrollYProgress, [0.1, 0.2], [0, 1])
 
+  // Safe image rendering for external hosts not configured in next.config
+  const allowedHostPatterns: RegExp[] = [
+    /^logo\.clearbit\.com$/,
+    /^example\.com$/,
+    /(^|\.)scene7\.com$/,
+    /^azimutyachts\.com$/,
+    /(^|\.)wandaloo\.com$/,
+    /(^|\.)hearstapps\.com$/,
+    /^www\.charles-pozzi\.fr$/,
+    /^toppng\.com$/,
+    /^www\.vhv\.rs$/,
+    /(^|\.)pngegg\.com$/,
+  ]
+
+  const isAllowedHost = (url: string) => {
+    try {
+      const u = new URL(url)
+      const host = u.hostname
+      return allowedHostPatterns.some((re) => re.test(host))
+    } catch {
+      return false
+    }
+  }
+
+  const isHttpUrl = (url: string) => /^https?:\/\//i.test(url)
+
   const nextImage = () => {
     setActiveImageIndex((prev) => (prev === carData.images.length - 1 ? 0 : prev + 1))
   }
@@ -260,13 +286,22 @@ export default function CarDetailsPage() {
         className="relative h-screen w-full overflow-hidden"
       >
         <div className="absolute inset-0">
-          <Image
-            src={carData.images[activeImageIndex] || "/placeholder.svg"}
-            alt={carData.name}
-            fill
-            className="object-cover"
-            priority
-          />
+          {carData.images[activeImageIndex] && isHttpUrl(carData.images[activeImageIndex]) && !isAllowedHost(carData.images[activeImageIndex]) ? (
+            <img
+              src={carData.images[activeImageIndex]}
+              alt={carData.name}
+              className="h-full w-full object-cover"
+              loading="eager"
+            />
+          ) : (
+            <Image
+              src={carData.images[activeImageIndex] || "/placeholder.svg"}
+              alt={carData.name}
+              fill
+              className="object-cover"
+              priority
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black" />
         </div>
 
@@ -334,24 +369,32 @@ export default function CarDetailsPage() {
                   }`}
                   onClick={() => setActiveImageIndex(index)}
                 >
-                  <Image
-                    src={image || "/placeholder.svg"}
-                    alt={`${carData.name} - Image ${index + 1}`}
-                    fill
-                    className="object-cover"
-                  />
+                  {image && isHttpUrl(image) && !isAllowedHost(image) ? (
+                    <img src={image} alt={`${carData.name} - Image ${index + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                  ) : (
+                    <Image
+                      src={image || "/placeholder.svg"}
+                      alt={`${carData.name} - Image ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  )}
                 </button>
               ))}
               <button
                 className="relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-md border-2 border-transparent"
                 onClick={() => setShowVideo(true)}
               >
-                <Image
-                  src={carData.videoThumbnail || "/placeholder.svg"}
-                  alt={`${carData.name} - Video`}
-                  fill
-                  className="object-cover"
-                />
+                {carData.videoThumbnail && isHttpUrl(carData.videoThumbnail) && !isAllowedHost(carData.videoThumbnail) ? (
+                  <img src={carData.videoThumbnail} alt={`${carData.name} - Video`} className="h-full w-full object-cover" loading="lazy" />
+                ) : (
+                  <Image
+                    src={carData.videoThumbnail || "/placeholder.svg"}
+                    alt={`${carData.name} - Video`}
+                    fill
+                    className="object-cover"
+                  />
+                )}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                   <Play className="h-6 w-6 text-white" />
                 </div>
@@ -563,12 +606,16 @@ export default function CarDetailsPage() {
                   className="group overflow-hidden rounded-lg bg-zinc-900/50 transition-all duration-300 hover:bg-zinc-900"
                 >
                   <div className="relative h-48 w-full overflow-hidden">
-                    <Image
-                      src={sim.image || '/placeholder.svg'}
-                      alt={sim.name}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
+                    {sim.image && isHttpUrl(sim.image) && !isAllowedHost(sim.image) ? (
+                      <img src={sim.image} alt={sim.name} className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      <Image
+                        src={sim.image || '/placeholder.svg'}
+                        alt={sim.name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    )}
                   </div>
                   <div className="p-4">
                     <h3 className="font-bold text-white">{sim.name}</h3>
