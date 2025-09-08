@@ -30,6 +30,29 @@ import PageLoader from "@/components/page-loader"
 // Fallback placeholders; real data comes from /api/vehicles/[id]
 const PLACEHOLDER_IMG = "/placeholder.svg?height=600&width=1000"
 
+// Strongly typed shape for mapped car data
+interface CarData {
+  id: string
+  name: string
+  year: string | number
+  price: string
+  location: string
+  description: string
+  specifications: Record<string, string>
+  features: string[]
+  images: string[]
+  videoThumbnail: string
+  videoUrl: string
+  latitude: number | null
+  longitude: number | null
+  owner: {
+    name: string
+    response: string
+    rating: number
+    reviews: number
+  }
+}
+
 export default function CarDetailsPage() {
   const params = useParams<{ id: string }>()
   const id = (params?.id as string) || ""
@@ -70,7 +93,7 @@ export default function CarDetailsPage() {
   }, [id])
 
   // Map API item to previous UI shape to minimize changes
-  const carData = useMemo(() => {
+  const carData: CarData = useMemo((): CarData => {
     if (!item) {
       return {
         id: id,
@@ -79,11 +102,13 @@ export default function CarDetailsPage() {
         price: "",
         location: "",
         description: "",
-        specifications: {},
+        specifications: {} as Record<string, string>,
         features: [],
         images: [PLACEHOLDER_IMG],
         videoThumbnail: PLACEHOLDER_IMG,
         videoUrl: "#",
+        latitude: null,
+        longitude: null,
         owner: { name: "", response: "", rating: 0, reviews: 0 },
       }
     }

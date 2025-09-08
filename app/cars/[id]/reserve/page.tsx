@@ -18,6 +18,7 @@ import { CalendarDays, DollarSign, ShieldCheck, CreditCard, ArrowLeft, Phone, Ma
 // Date range popover picker (shadcn style)
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 // Minimal vehicle detail shape
 type Contact = { contact_name?: string | null; phone?: string | null; email?: string | null }
@@ -42,7 +43,7 @@ export default function ReserveVehiclePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [authChecked, setAuthChecked] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<SupabaseUser | null>(null)
   const [vehicle, setVehicle] = useState<VehicleDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -78,7 +79,7 @@ export default function ReserveVehiclePage() {
   // Auth guard
   useEffect(() => {
     const supabase = createSupabaseBrowserClient()
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: { data: { user: SupabaseUser | null } }) => {
       setUser(data.user || null)
       setAuthChecked(true)
       if (!data.user) {

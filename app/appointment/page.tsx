@@ -16,6 +16,7 @@ import { Calendar, Clock, Video, MapPin, DollarSign, User, Mail, Phone, ArrowLef
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { motion } from "framer-motion"
 import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 function formatMoney(n: number) {
   if (!Number.isFinite(n)) return "$0"
@@ -28,7 +29,7 @@ function formatMoney(n: number) {
 export default function PrivateAppointmentPage() {
   const router = useRouter()
   const [authChecked, setAuthChecked] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<SupabaseUser | null>(null)
   const [appointmentType, setAppointmentType] = useState<"online" | "physical">("online")
   const [formData, setFormData] = useState({
     name: "",
@@ -50,7 +51,7 @@ export default function PrivateAppointmentPage() {
   // Auth guard (client-side)
   useEffect(() => {
     const supabase = createSupabaseBrowserClient()
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: { data: { user: SupabaseUser | null } }) => {
       setUser(data.user || null)
       setAuthChecked(true)
       if (!data.user) {
