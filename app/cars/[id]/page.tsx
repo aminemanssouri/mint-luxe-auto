@@ -138,6 +138,16 @@ export default function CarDetailsPage() {
     const ownerName = contacts[0]?.contact_name || ""
     const ownerResponse = contacts[0]?.response_time || ""
 
+    // Extract features with fallbacks (array of strings preferred)
+    let featureList: string[] = []
+    if (Array.isArray(item.features) && item.features.length > 0) {
+      featureList = (item.features || []).map((f: any) => f.feature_name ?? String(f)).filter(Boolean)
+    } else if (Array.isArray(item.car_features) && item.car_features.length > 0) {
+      featureList = (item.car_features || []).map((f: any) => f.feature_name ?? String(f)).filter(Boolean)
+    } else if (typeof item.features_text === 'string' && item.features_text.trim()) {
+      featureList = item.features_text.split(/[,\n]/).map((s: string) => s.trim()).filter(Boolean)
+    }
+
     return {
       id: item.id,
       name: item.name,
@@ -146,7 +156,7 @@ export default function CarDetailsPage() {
       location: item.location || "",
       description: item.description || "",
       specifications: specMap,
-      features: (item.features || []).map((f: any) => f.feature_name),
+      features: featureList,
       images: images.length ? images : [PLACEHOLDER_IMG],
       videoThumbnail: primary,
       videoUrl: "#",
@@ -161,7 +171,7 @@ export default function CarDetailsPage() {
     }
   }, [item, id])
 
-  // Load similar vehicles (prefer same brand, then fill with same category)
+  // Load similar vehicles: prioritize same type; within type prefer same brand, then category
   useEffect(() => {
     let cancelled = false
     async function loadSimilar() {
@@ -169,23 +179,37 @@ export default function CarDetailsPage() {
       setSimilarLoading(true)
       try {
         const combined: any[] = []
-        // 1) Try same brand
+        const typeVal = item.type ? String(item.type) : ''
+        // 1) Try same brand (and type if available)
         if (item.brand) {
           const p1 = new URLSearchParams({ brand: String(item.brand), limit: '12' })
+          if (typeVal) p1.set('type', typeVal)
           const r1 = await fetch(`/api/vehicles?${p1.toString()}`, { cache: 'no-store' })
           const j1 = await r1.json()
           if (j1?.ok) {
             combined.push(...(j1.items || []).filter((v: any) => v.id !== id))
           }
         }
-        // 2) Fill from same category if we need more
+        // 2) Fill from same category (within same type) if we need more
         if (combined.length < 3 && item.category) {
           const p2 = new URLSearchParams({ category: String(item.category), limit: '12' })
+          if (typeVal) p2.set('type', typeVal)
           const r2 = await fetch(`/api/vehicles?${p2.toString()}`, { cache: 'no-store' })
           const j2 = await r2.json()
           if (j2?.ok) {
             const byId = new Set(combined.map((v) => v.id))
             const more = (j2.items || []).filter((v: any) => v.id !== id && !byId.has(v.id))
+            combined.push(...more)
+          }
+        }
+        // 3) If still not enough, fill with same type
+        if (combined.length < 3 && typeVal) {
+          const p3 = new URLSearchParams({ type: typeVal, limit: '12' })
+          const r3 = await fetch(`/api/vehicles?${p3.toString()}`, { cache: 'no-store' })
+          const j3 = await r3.json()
+          if (j3?.ok) {
+            const byId = new Set(combined.map((v) => v.id))
+            const more = (j3.items || []).filter((v: any) => v.id !== id && !byId.has(v.id))
             combined.push(...more)
           }
         }
@@ -206,7 +230,8 @@ export default function CarDetailsPage() {
   const { scrollYProgress } = useScroll()
   const headerOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0])
   const headerScale = useTransform(scrollYProgress, [0, 0.1], [1, 0.95])
-  const contentOpacity = useTransform(scrollYProgress, [0.1, 0.2], [0, 1])
+  // Ensure content is visible immediately without scroll
+  const contentOpacity: number = 1
 
   // Safe image rendering for external hosts not configured in next.config
   const allowedHostPatterns: RegExp[] = [
@@ -404,8 +429,8 @@ export default function CarDetailsPage() {
         </div>
       </motion.section>
 
-      {/* Main Content */}
-      <motion.div style={{ opacity: contentOpacity }} className="relative z-10 bg-black">
+      {/* Main Content (visible immediately) */}
+      <motion.div className="relative z-10 bg-black">
         <div className="container mx-auto px-4 py-12">
           <div className="grid gap-12 lg:grid-cols-3">
             {/* Left Column - Car Details */}
