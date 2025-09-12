@@ -23,6 +23,9 @@ const trustedBrands = [
   { name: "Mansory",     image: "https://logo.clearbit.com/mansory.com" }
 ]
 
+// Build a proxied URL so adblockers can't block by host
+const proxy = (url: string) => `/api/image-proxy?u=${encodeURIComponent(url)}`
+
 export default function TrustedBySection() {
   const { isRTL } = useLanguage()
 
@@ -54,12 +57,18 @@ export default function TrustedBySection() {
                   className="inline-flex items-center gap-4 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg px-6 py-4 min-w-[200px] hover:border-gold/30 transition-colors"
                 >
                   <Image
-                    src={brand.image}
+                    src={proxy(brand.image)}
                     alt={`${brand.name} logo`}
                     width={40}
                     height={40}
                     loading="lazy"
                     className="object-contain flex-shrink-0"
+                    onError={(e) => {
+                      const img = e.currentTarget as HTMLImageElement
+                      if (!img.src.endsWith('/placeholder-logo.png')) {
+                        img.src = '/placeholder-logo.png'
+                      }
+                    }}
                   />
                   <div className="text-left">
                     <h3 className="text-white font-medium">{brand.name}</h3>
@@ -79,12 +88,18 @@ export default function TrustedBySection() {
                   className="inline-flex items-center gap-4 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg px-6 py-4 min-w-[200px] hover:border-gold/30 transition-colors"
                 >
                   <Image
-                    src={brand.image}
+                    src={proxy(brand.image)}
                     alt={`${brand.name} logo`}
                     width={40}
                     height={40}
                     loading="lazy"
                     className="object-contain flex-shrink-0"
+                    onError={(e) => {
+                      const img = e.currentTarget as HTMLImageElement
+                      if (!img.src.endsWith('/placeholder-logo.png')) {
+                        img.src = '/placeholder-logo.png'
+                      }
+                    }}
                   />
                   <div className="text-left">
                     <h3 className="text-white font-medium">{brand.name}</h3>
