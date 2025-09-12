@@ -9,7 +9,6 @@ import type { Language } from "@/lib/i18n"
 
 const languages = [
   { code: "en" as Language, name: "English", flag: "🇺🇸" },
-  { code: "ar" as Language, name: "العربية", flag: "🇸🇦" },
   { code: "fr" as Language, name: "Français", flag: "🇫🇷" },
 ]
 
