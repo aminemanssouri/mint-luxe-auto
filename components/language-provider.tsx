@@ -17,12 +17,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>("en")
   const [t, setT] = useState<Translations>(getTranslation("en"))
 
-  const isRTL = language === "ar"
+  const isRTL = false // No RTL languages supported
 
   useEffect(() => {
     // Load language from localStorage
     const savedLanguage = localStorage.getItem("language") as Language
-    if (savedLanguage && ["en", "ar", "fr"].includes(savedLanguage)) {
+    if (savedLanguage && ["en", "fr"].includes(savedLanguage)) {
       setLanguage(savedLanguage)
     }
   }, [])
