@@ -151,7 +151,27 @@ export default function ServicesSection() {
           <div className="mx-auto max-w-3xl rounded-lg bg-gradient-to-r from-gold/10 to-gold/5 p-8 border border-gold/20">
             <h3 className="mb-4 text-2xl font-bold text-white">{t.home.needCustomService}</h3>
             <p className="mb-6 text-white/70">{t.home.needCustomServiceDesc}</p>
-            <Button className="bg-gold hover:bg-gold/90 text-black" onClick={() => (window.location.href = "/contact")}>
+            <Button 
+              className="bg-gold hover:bg-gold/90 text-black" 
+              onClick={() => {
+                // Set the subject parameter in URL
+                const url = new URL(window.location.href)
+                url.searchParams.set('subject', 'Special Service')
+                url.hash = '#contact'
+                window.history.pushState({}, '', url.toString())
+                
+                // Trigger the contact form to check for parameters
+                window.dispatchEvent(new Event('hashchange'))
+                
+                // Scroll to contact form
+                setTimeout(() => {
+                  const contactElement = document.getElementById('contact')
+                  if (contactElement) {
+                    contactElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }
+                }, 100)
+              }}
+            >
               {t.home.contactSpecialists}
             </Button>
           </div>
