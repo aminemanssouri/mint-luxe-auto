@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { amount, currency = 'USD', vehicleId, mode } = await request.json()
+    const { amount, currency = 'USD', vehicleId, mode, reservationDetails } = await request.json()
 
     if (!amount || !vehicleId) {
       return NextResponse.json(
@@ -11,19 +11,43 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Determine charge name and description based on mode
+    let chargeName = 'Vehicle Purchase'
+    let description = `Payment for vehicle ID: ${vehicleId}`
+    
+    if (mode === 'deposit') {
+      chargeName = 'Vehicle Deposit'
+      description = `Deposit payment for vehicle ID: ${vehicleId}`
+    } else if (mode === 'reservation_deposit') {
+      chargeName = 'Reservation Deposit'
+      description = `Reservation deposit for vehicle ID: ${vehicleId}`
+    }
+
     // Coinbase Commerce charge creation
+    const metadata: any = {
+      vehicleId,
+      mode: mode || 'full',
+    }
+    
+    // Add reservation details to metadata if it's a reservation
+    if (mode === 'reservation_deposit' && reservationDetails) {
+      metadata.reservationType = 'rental'
+      metadata.startDate = reservationDetails.startDate
+      metadata.endDate = reservationDetails.endDate
+      metadata.totalDays = reservationDetails.totalDays.toString()
+      metadata.dailyRate = reservationDetails.dailyRate.toString()
+      metadata.totalAmount = reservationDetails.totalAmount.toString()
+    }
+
     const chargeData = {
-      name: `Vehicle ${mode === 'deposit' ? 'Deposit' : 'Purchase'}`,
-      description: `Payment for vehicle ID: ${vehicleId}`,
+      name: chargeName,
+      description,
       pricing_type: 'fixed_price',
       local_price: {
         amount: amount.toString(),
         currency: currency,
       },
-      metadata: {
-        vehicleId,
-        mode: mode || 'full',
-      },
+      metadata,
     }
 
     const response = await fetch('https://api.commerce.coinbase.com/charges', {

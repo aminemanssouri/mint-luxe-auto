@@ -14,7 +14,7 @@ function getStripeInstance() {
 export async function POST(request: NextRequest) {
   try {
     const stripe = getStripeInstance()
-    const { amount, currency = 'usd', vehicleId, mode, vehicleName, usePaymentIntent = false } = await request.json()
+    const { amount, currency = 'usd', vehicleId, mode, vehicleName, usePaymentIntent = false, reservationDetails } = await request.json()
 
     if (!amount || !vehicleId) {
       return NextResponse.json(
@@ -23,9 +23,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Determine product description based on mode
+    let description = 'Full Payment'
+    let cancelUrl = `${request.nextUrl.origin}/checkout/vehicle/${vehicleId}`
+    
+    if (mode === 'deposit') {
+      description = 'Deposit Payment (25%)'
+    } else if (mode === 'reservation_deposit') {
+      description = 'Reservation Deposit (25%)'
+      cancelUrl = `${request.nextUrl.origin}/checkout/reservation/${vehicleId}`
+    }
+
     // Try Checkout first, fallback to Payment Intent if business name not set
     if (!usePaymentIntent) {
       try {
+        const metadata: any = {
+          vehicleId,
+          mode: mode || 'full',
+        }
+        
+        // Add reservation details to metadata if it's a reservation
+        if (mode === 'reservation_deposit' && reservationDetails) {
+          metadata.reservationType = 'rental'
+          metadata.startDate = reservationDetails.startDate
+          metadata.endDate = reservationDetails.endDate
+          metadata.totalDays = reservationDetails.totalDays.toString()
+          metadata.dailyRate = reservationDetails.dailyRate.toString()
+          metadata.totalAmount = reservationDetails.totalAmount.toString()
+        }
+
         const session = await stripe.checkout.sessions.create({
           payment_method_types: ['card'],
           line_items: [
@@ -34,7 +60,7 @@ export async function POST(request: NextRequest) {
                 currency,
                 product_data: {
                   name: vehicleName || `Vehicle ${vehicleId}`,
-                  description: mode === 'deposit' ? 'Deposit Payment (25%)' : 'Full Payment',
+                  description,
                 },
                 unit_amount: Math.round(amount * 100), // Convert to cents
               },
@@ -43,11 +69,8 @@ export async function POST(request: NextRequest) {
           ],
           mode: 'payment',
           success_url: `${request.nextUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${request.nextUrl.origin}/checkout/vehicle/${vehicleId}`,
-          metadata: {
-            vehicleId,
-            mode: mode || 'full',
-          },
+          cancel_url: cancelUrl,
+          metadata,
         })
 
         return NextResponse.json({
@@ -61,15 +84,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Payment Intent as fallback (doesn't require business name)
+    const metadata: any = {
+      vehicleId,
+      mode: mode || 'full',
+      vehicleName: vehicleName || `Vehicle ${vehicleId}`,
+    }
+    
+    // Add reservation details to metadata if it's a reservation
+    if (mode === 'reservation_deposit' && reservationDetails) {
+      metadata.reservationType = 'rental'
+      metadata.startDate = reservationDetails.startDate
+      metadata.endDate = reservationDetails.endDate
+      metadata.totalDays = reservationDetails.totalDays.toString()
+      metadata.dailyRate = reservationDetails.dailyRate.toString()
+      metadata.totalAmount = reservationDetails.totalAmount.toString()
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Convert to cents
       currency,
-      metadata: {
-        vehicleId,
-        mode: mode || 'full',
-        vehicleName: vehicleName || `Vehicle ${vehicleId}`,
-      },
-      description: `${mode === 'deposit' ? 'Deposit' : 'Full Payment'} for ${vehicleName || `Vehicle ${vehicleId}`}`,
+      metadata,
+      description: `${description} for ${vehicleName || `Vehicle ${vehicleId}`}`,
     })
 
     return NextResponse.json({

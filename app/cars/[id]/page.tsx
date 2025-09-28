@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -226,11 +226,7 @@ export default function CarDetailsPage() {
     }
   }, [item, id])
 
-  const { scrollYProgress } = useScroll()
-  const headerOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0])
-  const headerScale = useTransform(scrollYProgress, [0, 0.1], [1, 0.95])
-  // Ensure content is visible immediately without scroll
-  const contentOpacity: number = 1
+  // Ensure content is visible immediately without scroll-based animations
 
   // Safe image rendering for external hosts not configured in next.config
   const allowedHostPatterns: RegExp[] = [
@@ -305,10 +301,7 @@ export default function CarDetailsPage() {
       </header>
 
       {/* Hero Section with Main Image */}
-      <motion.section
-        style={{ opacity: headerOpacity, scale: headerScale }}
-        className="relative h-screen w-full overflow-hidden"
-      >
+      <section className="relative h-screen w-full overflow-hidden">
         <div className="absolute inset-0">
           {carData.images[activeImageIndex] && isHttpUrl(carData.images[activeImageIndex]) && !isAllowedHost(carData.images[activeImageIndex]) ? (
             <img
@@ -316,6 +309,7 @@ export default function CarDetailsPage() {
               alt={carData.name}
               className="h-full w-full object-cover"
               loading="eager"
+              style={{ opacity: 1 }}
             />
           ) : (
             <Image
@@ -324,6 +318,7 @@ export default function CarDetailsPage() {
               fill
               className="object-cover"
               priority
+              style={{ opacity: 1 }}
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black" />
@@ -426,10 +421,10 @@ export default function CarDetailsPage() {
             </div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* Main Content (visible immediately) */}
-      <motion.div className="relative z-10 bg-black">
+      <div className="relative z-10 bg-black">
         <div className="container mx-auto px-4 py-12">
           <div className="grid gap-12 lg:grid-cols-3">
             {/* Left Column - Car Details */}
@@ -632,7 +627,7 @@ export default function CarDetailsPage() {
             </div>
           </motion.div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Video Modal */}
       <AnimatePresence>

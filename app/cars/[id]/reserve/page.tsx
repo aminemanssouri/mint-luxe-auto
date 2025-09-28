@@ -53,6 +53,8 @@ export default function ReserveVehiclePage() {
   const [endDateTime, setEndDateTime] = useState("")
   const [reservedDates, setReservedDates] = useState<Date[]>([])
   const [reserving, setReserving] = useState(false)
+  // Compute current time once on client to avoid hydration mismatch
+  const [nowIsoMinute, setNowIsoMinute] = useState("")
 
   const daysSelected = useMemo(() => {
     if (startDateTime && endDateTime) {
@@ -75,6 +77,13 @@ export default function ReserveVehiclePage() {
   }, [vehicle?.price])
   const rentTotal = useMemo(() => dailyRate * Math.max(0, daysSelected), [dailyRate, daysSelected])
   const deposit25 = useMemo(() => Math.round((vehicle?.price ?? 0) * 0.25), [vehicle?.price])
+  const chartData = useMemo(() => {
+    const price = vehicle?.price ?? 0
+    return [
+      { name: "Deposit (25%)", value: Math.round(price * 0.25) },
+      { name: "Remainder", value: Math.max(0, price - Math.round(price * 0.25)) },
+    ]
+  }, [vehicle?.price])
 
   // Auth guard
   useEffect(() => {
@@ -89,17 +98,7 @@ export default function ReserveVehiclePage() {
     })
   }, [id, router])
 
-  if (!authChecked) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-white/80">
-        Checking authentication...
-      </div>
-    )
-  }
-  if (authChecked && !user) {
-    return null
-  }
-
+  // Load vehicle data
   useEffect(() => {
     let active = true
     async function load() {
@@ -140,6 +139,25 @@ export default function ReserveVehiclePage() {
     return () => { active = false }
   }, [id])
 
+  // Initialize current time string once on mount to avoid hydration mismatch
+  useEffect(() => {
+    try {
+      setNowIsoMinute(new Date().toISOString().slice(0, 16))
+    } catch {}
+  }, [])
+
+  // Early returns after all hooks are called
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-white/80">
+        Checking authentication...
+      </div>
+    )
+  }
+  if (authChecked && !user) {
+    return null
+  }
+
   const disabledMatcher = (date: Date) => {
     const d0 = new Date(date); d0.setHours(0,0,0,0)
     return reservedDates.some((rd) => rd.getTime() === d0.getTime())
@@ -147,55 +165,18 @@ export default function ReserveVehiclePage() {
 
   async function handleReserveRental() {
     if (!startDateTime || !endDateTime || daysSelected <= 0) return
-    try {
-      setReserving(true)
-      const res = await fetch(`/api/vehicles/${id}/rent`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerId: null, // Will be handled by the API
-          rentalType: "daily",
-          startDate: startDateTime,
-          endDate: endDateTime,
-          pickupLocation: "showroom",
-          returnLocation: "showroom",
-          pickupAddress: "",
-          returnAddress: "",
-          dailyRate: vehicle?.price || 0,
-          weeklyRate: null,
-          monthlyRate: null,
-          totalDays: daysSelected,
-          baseAmount: rentTotal,
-          depositAmount: 0,
-          additionalDrivers: [],
-          driverLicenseInfo: null,
-          insuranceOption: "basic",
-          specialRequests: "",
-          totalAmount: rentTotal
-        }),
-      })
-      if (res.status === 401) {
-        router.push("/auth/login")
-        return
-      }
-      const json = await res.json()
-      if (!json?.success) throw new Error(json?.error || "Failed to create rental agreement")
-      router.push("/my-bookings")
-    } catch (e) {
-      console.error(e)
-      alert("Could not create rental reservation.")
-    } finally {
-      setReserving(false)
-    }
+    
+    // Redirect to payment page instead of creating reservation directly
+    const params = new URLSearchParams({
+      startDate: startDateTime,
+      endDate: endDateTime,
+      totalAmount: rentTotal.toString(),
+      dailyRate: dailyRate.toString(),
+      totalDays: daysSelected.toString()
+    })
+    
+    router.push(`/checkout/reservation/${id}?${params.toString()}`)
   }
-
-  const chartData = useMemo(() => {
-    const price = vehicle?.price ?? 0
-    return [
-      { name: "Deposit (25%)", value: Math.round(price * 0.25) },
-      { name: "Remainder", value: Math.max(0, price - Math.round(price * 0.25)) },
-    ]
-  }, [vehicle?.price])
 
   if (loading) return <PageLoader message="Loading vehicle reservation..." />
   if (error || !vehicle) return <PageLoader message={error || "Vehicle not found"} />
@@ -252,7 +233,7 @@ export default function ReserveVehiclePage() {
                         value={startDateTime}
                         onChange={(e) => setStartDateTime(e.target.value)}
                         className="bg-zinc-900 border-zinc-800 text-white"
-                        min={new Date().toISOString().slice(0, 16)}
+                        min={nowIsoMinute || undefined}
                       />
                     </div>
                     <div className="space-y-2">
@@ -265,7 +246,7 @@ export default function ReserveVehiclePage() {
                         value={endDateTime}
                         onChange={(e) => setEndDateTime(e.target.value)}
                         className="bg-zinc-900 border-zinc-800 text-white"
-                        min={startDateTime || new Date().toISOString().slice(0, 16)}
+                        min={startDateTime || nowIsoMinute || undefined}
                       />
                     </div>
                   </div>
@@ -282,21 +263,14 @@ export default function ReserveVehiclePage() {
                   <div className="flex justify-between"><span>Days</span><span>{daysSelected}</span></div>
                   <div className="h-px bg-zinc-800" />
                   <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-gold">{formatMoney(rentTotal)}</span></div>
-                  <Button className="w-full mt-4 bg-gold text-black hover:bg-gold/90" disabled={daysSelected <= 0 || reserving} onClick={handleReserveRental}>
-                    {reserving ? (
-                      <div className="flex items-center gap-2">
-                        <LoadingSpinner size="sm" className="text-black" />
-                        <span>Reserving...</span>
-                      </div>
-                    ) : (
-                      "Reserve Rental"
-                    )}
+                  <Button className="w-full mt-4 bg-gold text-black hover:bg-gold/90" disabled={daysSelected <= 0} onClick={handleReserveRental}>
+                    Continue to Payment
                   </Button>
                   <Alert className="bg-zinc-900/60 border-zinc-800 mt-4">
                     <ShieldCheck className="h-4 w-4" />
                     <AlertTitle>Secure reservation</AlertTitle>
                     <AlertDescription>
-                      Your rental is subject to availability review. You will be contacted to finalize delivery and deposit.
+                      Pay a 25% deposit to secure your reservation. The remaining balance is due at pickup.
                     </AlertDescription>
                   </Alert>
                 </CardContent>
